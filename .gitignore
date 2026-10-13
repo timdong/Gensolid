@@ -15,3 +15,11 @@ bindings/wasm/pkg/
 
 # Private verifier assets never live in this repository
 verifier/private/
+
+# Creo session files written into the startup directory
+trail.txt
+trail.txt.*
+std.out
+std.err
+traceback.log
+current_session.pro
