@@ -18,8 +18,10 @@
 
 mod block;
 pub mod entity;
+mod holed_block;
 pub mod model;
 
 pub use block::make_block;
 pub use entity::*;
+pub use holed_block::{make_block_with_hole, make_block_with_offset_hole};
 pub use model::{Model, RawEditor};

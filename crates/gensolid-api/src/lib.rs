@@ -11,7 +11,7 @@ pub use gensolid_check::FaultKind;
 use gensolid_check::{CheckOptions, check_body};
 pub use gensolid_core::{Error, ErrorCode, Precision, Result};
 use gensolid_math::{Frame, Point3, Vec3};
-use gensolid_topo::{BodyId, EntityRef, Model, make_block};
+use gensolid_topo::{BodyId, EntityRef, Model, make_block, make_block_with_offset_hole};
 
 /// Integer handle to an entity. Tags are never reused within a session.
 pub type Tag = i32;
@@ -175,6 +175,46 @@ impl Session {
             )?,
         };
         let body = make_block(&mut self.model, x, y, z, &frame)?;
+        self.tag(EntityRef::Body(body))
+    }
+
+    /// Creates a solid block with a centred cylindrical through-hole along the basis Z
+    /// axis. `radius` specifies the hole radius. The block is centred on the basis origin;
+    /// `None` uses the world frame. This is a specialised primitive, not a Boolean API.
+    pub fn body_create_solid_block_with_hole(
+        &mut self,
+        x: f64,
+        y: f64,
+        z: f64,
+        radius: f64,
+        basis: Option<&Axis2>,
+    ) -> Result<Tag> {
+        self.body_create_solid_block_with_offset_hole(x, y, z, radius, [0.0, 0.0], basis)
+    }
+
+    /// Creates a solid block with a cylindrical through-hole at local XY `offset`.
+    /// `radius` is the hole radius; its axis is parallel to the basis Z axis. The block
+    /// stays centred on the basis origin (`None` uses the world frame). Remaining side
+    /// walls must exceed linear precision. This is a specialised primitive.
+    pub fn body_create_solid_block_with_offset_hole(
+        &mut self,
+        x: f64,
+        y: f64,
+        z: f64,
+        radius: f64,
+        offset: [f64; 2],
+        basis: Option<&Axis2>,
+    ) -> Result<Tag> {
+        let frame = match basis {
+            None => Frame::WORLD,
+            Some(b) => Frame::new(
+                point(b.location),
+                vector(b.axis),
+                vector(b.ref_direction),
+                self.model.precision(),
+            )?,
+        };
+        let body = make_block_with_offset_hole(&mut self.model, x, y, z, radius, offset, &frame)?;
         self.tag(EntityRef::Body(body))
     }
 

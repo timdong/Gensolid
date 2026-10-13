@@ -141,8 +141,10 @@ version = "0.1.0"
 dependencies = [
  "gensolid-check",
  "gensolid-core",
+ "gensolid-geom",
  "gensolid-math",
  "gensolid-topo",
+ "proptest",
 ]
 
 [[package]]
