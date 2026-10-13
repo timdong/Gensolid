@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "run_id": "fd9943731bbf4516a2bb7a0ef63709fa",
+  "case": {
+    "schema_version": 1,
+    "case_id": "plate-offset-r4",
+    "operation": "import_step",
+    "input_step": "../inputs/offset.step",
+    "part_name": "gs_offset",
+    "units": "mm",
+    "parameters": {
+      "x": 40,
+      "y": 25,
+      "z": 8,
+      "radius": 4,
+      "offset": [
+        6,
+        -3
+      ]
+    },
+    "basis": {
+      "location": [
+        0,
+        0,
+        4
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "ref_direction": [
+        1,
+        0,
+        0
+      ]
+    },
+    "precision_source": "Gensolid SessionOptions::default; Creo import settings remain independent",
+    "seed": null,
+    "input_provenance": "Existing independent build123d reference; not Gensolid STEP export"
+  },
+  "started_utc": "2026-10-13T10:22:09.652243+00:00",
+  "duration_seconds": 6.179155199992238,
+  "success": false,
+  "process_returncode": 255,
+  "timeout": true,
+  "runner_error": null,
+  "failure_events": [],
+  "features": [],
+  "mass_property": null,
+  "creo_install_root": "D:\\Program Files\\PTC\\Creo 10.0.8.0",
+  "sdk_jar_sha256": {
+    "pfcasync.jar": "668c570078a00a44e30f9ee14722cccb1f96576c652a80cc90156fccc9fb32f4",
+    "otk.jar": "8afd5082aae3674f66b5938394c0557ccc74c0cf1607f27712dd2d110d27720d"
+  },
+  "gensolid_revision": "0e92f4e119973670e0756a87690f7791fa1c6a51",
+  "tracked_patch_sha256": "0fd7d154616f121627dec65f51764bfca288dd7fbb217d51300689819755ed07",
+  "probe_source_sha256": "1e283d341fa68505ba5dac6008417ac00778eb8f7d9d92899c36cd84c03dd7f3",
+  "runner_source_sha256": "2737b9206559f5aacb24d20a51c247b8b076328dd1d08b6ced0e1407a9fe8b6d",
+  "artifacts": {
+    "in.step": "60a6732ace009a10d5dea8c0aff6b9a6f8af80fdfe2d3743764bffff2becc33c"
+  },
+  "owned_processes": [
+    {
+      "pid": 28116,
+      "parent": 6376,
+      "name": "java.exe",
+      "created": "2026-10-13T10:22:09.6979650Z",
+      "marked": true
+    },
+    {
+      "pid": 33116,
+      "parent": 28116,
+      "name": "conhost.exe",
+      "created": "2026-10-13T10:22:09.7024970Z",
+      "marked": false
+    },
+    {
+      "pid": 37208,
+      "parent": 28116,
+      "name": "pro_comm_msg.exe",
+      "created": "2026-10-13T10:22:09.8608160Z",
+      "marked": false
+    }
+  ],
+  "cleanup_stopped": [
+    {
+      "pid": 37208,
+      "parent": 28116,
+      "name": "pro_comm_msg.exe",
+      "created": "2026-10-13T10:22:09.8608160Z",
+      "marked": false
+    },
+    {
+      "pid": 33116,
+      "parent": 28116,
+      "name": "conhost.exe",
+      "created": "2026-10-13T10:22:09.7024970Z",
+      "marked": false
+    },
+    {
+      "pid": 28116,
+      "parent": 6376,
+      "name": "java.exe",
+      "created": "2026-10-13T10:22:09.6979650Z",
+      "marked": true
+    }
+  ],
+  "measurements": null,
+  "measurement_reason": "Probe records interchange only; independent geometry inspection is a separate step"
+}

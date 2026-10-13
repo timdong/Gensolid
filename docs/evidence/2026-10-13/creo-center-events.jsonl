@@ -1,0 +1,12 @@
+{"event": "start", "timestamp_ms": 1791886766046, "java_version": "21.0.1"}
+{"event": "directory", "timestamp_ms": 1791886779567, "path": "D:\\CAD\\liuxin\\Gensolid\\target\\creo-probes\\plate-center-r4-cbb8d73fa69e\\"}
+{"event": "regenerated", "timestamp_ms": 1791886779601, "completed": true}
+{"event": "feature_count", "timestamp_ms": 1791886779609, "count": 2}
+{"event": "feature", "timestamp_ms": 1791886779634, "id": 2, "type_value": 68, "type_name": "坐标系", "status_value": 0, "status_name": "FEAT_ACTIVE"}
+{"event": "feature", "timestamp_ms": 1791886779637, "id": 4, "type_value": 22, "type_name": "导入特征", "status_value": 0, "status_name": "FEAT_ACTIVE"}
+{"event": "saved", "timestamp_ms": 1791886779766, "file": "gs_center.prt"}
+{"event": "exported", "timestamp_ms": 1791886779787, "requested_file": "result.step"}
+{"event": "model_units", "timestamp_ms": 1791886779792, "length": "in"}
+{"event": "mass_property", "timestamp_ms": 1791886779799, "available": false, "volume": null, "area": null, "reason": "com.ptc.pfc.Implementation.pfcExceptions$XToolkitGeneralError: null"}
+{"event": "connection_ended", "timestamp_ms": 1791886779804, "completed": true}
+{"event": "completion", "timestamp_ms": 1791886779804, "success": true}

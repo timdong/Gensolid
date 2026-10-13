@@ -55,6 +55,55 @@ impl Session {
             .map_err(to_py)
     }
 
+    /// Creates a block with a centred circular through-hole along local Z.
+    /// `radius` is the hole radius, not its diameter.
+    #[pyo3(signature = (x, y, z, radius, location=[0.0, 0.0, 0.0], axis=[0.0, 0.0, 1.0], ref_direction=[1.0, 0.0, 0.0]))]
+    #[allow(clippy::too_many_arguments)] // Matches the dimensions and frame of the public API.
+    fn body_create_solid_block_with_hole(
+        &mut self,
+        x: f64,
+        y: f64,
+        z: f64,
+        radius: f64,
+        location: [f64; 3],
+        axis: [f64; 3],
+        ref_direction: [f64; 3],
+    ) -> PyResult<Tag> {
+        let basis = Axis2 {
+            location,
+            axis,
+            ref_direction,
+        };
+        self.inner
+            .body_create_solid_block_with_hole(x, y, z, radius, Some(&basis))
+            .map_err(to_py)
+    }
+
+    /// Creates a block with a through-hole at local XY `offset` along local Z.
+    /// `radius` is the radius; the block remains centred on `location`.
+    #[pyo3(signature = (x, y, z, radius, offset, location=[0.0, 0.0, 0.0], axis=[0.0, 0.0, 1.0], ref_direction=[1.0, 0.0, 0.0]))]
+    #[allow(clippy::too_many_arguments)] // Matches the dimensions, offset and frame of the public API.
+    fn body_create_solid_block_with_offset_hole(
+        &mut self,
+        x: f64,
+        y: f64,
+        z: f64,
+        radius: f64,
+        offset: [f64; 2],
+        location: [f64; 3],
+        axis: [f64; 3],
+        ref_direction: [f64; 3],
+    ) -> PyResult<Tag> {
+        let basis = Axis2 {
+            location,
+            axis,
+            ref_direction,
+        };
+        self.inner
+            .body_create_solid_block_with_offset_hole(x, y, z, radius, offset, Some(&basis))
+            .map_err(to_py)
+    }
+
     /// Face tags of a body.
     fn body_ask_faces(&mut self, body: Tag) -> PyResult<Vec<Tag>> {
         self.inner.body_ask_faces(body).map_err(to_py)

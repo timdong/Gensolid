@@ -1,0 +1,185 @@
+   Compiling gensolid-ffi v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-ffi)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.99s
+     Running unittests src/lib.rs (target/debug/deps/gensolid_api-efdd17c9e30803d9)
+
+running 3 tests
+test tests::honours_basis_set ... ok
+test tests::block_round_trip_through_tags ... ok
+test tests::rejects_bad_tags ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/holed_block.rs (target/debug/deps/holed_block-2961ca835e798ae1)
+
+running 10 tests
+test tests::creo_plate_matches_requested_geometry ... ok
+test tests::offset_plate_preserves_block_and_positions_hole ... ok
+test tests::rejects_offset_holes_touching_or_crossing_all_four_sides ... ok
+test tests::rejects_degenerate_inputs_without_allocating_bodies ... ok
+test tests::walls_within_precision_are_rejected ... ok
+test tests::offset_walls_within_precision_are_rejected ... ok
+test tests::near_degenerate_valid_radius_wall_and_height ... ok
+test tests::offset_holes_with_near_degenerate_walls_are_valid ... ok
+test tests::random_offset_sizes_and_frames_are_valid ... ok
+test tests::random_sizes_and_frames_are_valid ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running unittests src/lib.rs (target/debug/deps/gensolid_check-2696fa7758806a51)
+
+running 5 tests
+test tests::detects_non_manifold_edge_in_solid ... ok
+test tests::block_is_valid ... ok
+test tests::detects_broken_loop_and_back_pointer ... ok
+test tests::detects_moved_vertex_and_respects_its_tolerance ... ok
+test tests::arbitrary_blocks_are_valid ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src/lib.rs (target/debug/deps/gensolid_core-eddf9c93a660c506)
+
+running 4 tests
+test tolerance::tests::local_tolerance_never_below_default ... ok
+test arena::tests::stale_ids_do_not_alias_reused_slots ... ok
+test tolerance::tests::rejects_inconsistent_precision ... ok
+test arena::tests::iter_skips_removed_values ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/gensolid-b12d089051eb2960)
+
+running 2 tests
+test tests::codes_match_kernel_enums ... ok
+test tests::c_api_session_flow ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/gensolid_geom-f824457a448a26d8)
+
+running 15 tests
+test curve::tests::circle_eval_and_inverse ... ok
+test store::tests::swept_circle_matches_cylinder ... ok
+test curve::tests::rejects_degenerate_line ... ok
+test nurbs::tests::bilinear_surface_eval ... ok
+test nurbs::tests::linear_bcurve_matches_segment ... ok
+test surface::tests::normals_point_outward ... ok
+test store::tests::projects_onto_bcurve ... ok
+test nurbs::tests::rejects_bad_knot_vectors ... ok
+test store::tests::rejects_dangling_profile ... ok
+test store::tests::spun_semicircle_matches_sphere ... ok
+test surface::tests::evaluated_points_have_zero_distance ... ok
+test nurbs::tests::rational_quarter_circle_is_exact ... ok
+test surface::tests::offset_points_have_offset_distance ... ok
+test nurbs::tests::curve_derivative_matches_finite_difference ... ok
+test surface::tests::partials_match_finite_differences ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/lib.rs (target/debug/deps/gensolid_math-483d3468606941fa)
+
+running 12 tests
+test frame::tests::local_world_round_trip ... ok
+test frame::tests::projects_reference_direction ... ok
+test interval::tests::sign_is_certified_or_absent ... ok
+test predicates::tests::non_finite_input_has_no_sign ... ok
+test predicates::tests::orient2d_basic ... ok
+test predicates::tests::orient2d_resolves_one_ulp_offsets ... ok
+test predicates::tests::orient3d_sign_convention ... ok
+test vector::tests::cross_is_right_handed ... ok
+test vector::tests::normalized_rejects_short_vectors ... ok
+test interval::tests::one_tenth_sum_is_enclosed ... ok
+test frame::tests::rejects_parallel_reference_direction ... ok
+test interval::tests::operations_enclose_point_results ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/lib.rs (target/debug/deps/gensolid_policy-9ff8a80f8873185f)
+
+running 2 tests
+test tests::finds_negative_exponents_only_in_literals ... ok
+test tests::reads_dependency_names ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/policy.rs (target/debug/deps/policy-c3d72209d4305e47)
+
+running 4 tests
+test brep_crates_do_not_depend_on_meshing ... ok
+test every_crate_uses_workspace_lints ... ok
+test unsafe_code_is_confined_to_the_ffi_crate ... ok
+test tolerances_come_from_precision_not_literals ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+
+     Running unittests src/lib.rs (target/debug/deps/gensolid_topo-d282538dcd1e6706)
+
+running 2 tests
+test block::tests::rejects_degenerate_size ... ok
+test block::tests::block_has_euler_characteristic_two ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/gensolid_xt-e24230f642687ea6)
+
+running 4 tests
+test header::tests::rejects_missing_end_marker ... ok
+test header::tests::rejects_transcoded_files ... ok
+test tokens::tests::classifies_tokens_with_offsets ... ok
+test header::tests::header_round_trips ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests gensolid_api
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests gensolid_check
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests gensolid_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests gensolid
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests gensolid_geom
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests gensolid_math
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests gensolid_policy
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests gensolid_topo
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests gensolid_xt
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

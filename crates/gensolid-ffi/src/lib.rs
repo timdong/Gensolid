@@ -128,6 +128,16 @@ pub struct GS_AXIS2_sf_t {
     pub ref_direction: [f64; 3],
 }
 
+/// Options for [`GS_BODY_create_solid_block_with_hole`].
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct GS_BODY_create_solid_block_with_hole_o_t {
+    /// Must be `GS_O_T_VERSION`.
+    pub o_t_version: i32,
+    /// Hole centre in the block's local XY plane; default is `[0, 0]`.
+    pub offset: [f64; 2],
+}
+
 /// One fault found by [`GS_BODY_check`]; `state` is a `GS_BODY_state_*` value.
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -291,6 +301,9 @@ pub unsafe extern "C" fn GS_BODY_create_solid_block(
     body: *mut GS_BODY_t,
 ) -> GS_ERROR_code_t {
     guard(|| {
+        if body.is_null() {
+            return Err(GS_ERROR_null_argument);
+        }
         let basis = (!basis_set.is_null()).then(|| {
             // SAFETY: non-null and valid by the caller's contract.
             let b = unsafe { *basis_set };
@@ -302,6 +315,76 @@ pub unsafe extern "C" fn GS_BODY_create_solid_block(
         });
         let tag = with_session(|s| s.body_create_solid_block(x, y, z, basis.as_ref()))?;
         // SAFETY: forwarded caller contract.
+        unsafe { write_out(body, tag) }
+    })
+}
+
+/// Initialises through-hole options to a centred hole.
+///
+/// # Safety
+/// `options` must be valid for writes.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GS_BODY_create_solid_block_with_hole_o_init(
+    options: *mut GS_BODY_create_solid_block_with_hole_o_t,
+) -> GS_ERROR_code_t {
+    guard(|| {
+        // SAFETY: forwarded caller contract; write_out rejects null.
+        unsafe {
+            write_out(
+                options,
+                GS_BODY_create_solid_block_with_hole_o_t {
+                    o_t_version: GS_O_T_VERSION,
+                    offset: [0.0, 0.0],
+                },
+            )
+        }
+    })
+}
+
+/// Creates a block with one circular through-hole along local Z. `radius` is a radius,
+/// not a diameter. Null `basis_set` uses world axes; null `options` centres the hole.
+/// The block is centred on the basis location. Touching or crossing a side is rejected.
+/// This is a specialised analytic primitive, not a general Boolean operation.
+///
+/// # Safety
+/// `basis_set` and `options` must be null or valid for reads; `body` must be valid for writes.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GS_BODY_create_solid_block_with_hole(
+    x: f64,
+    y: f64,
+    z: f64,
+    radius: f64,
+    basis_set: *const GS_AXIS2_sf_t,
+    options: *const GS_BODY_create_solid_block_with_hole_o_t,
+    body: *mut GS_BODY_t,
+) -> GS_ERROR_code_t {
+    guard(|| {
+        if body.is_null() {
+            return Err(GS_ERROR_null_argument);
+        }
+        let offset = if options.is_null() {
+            [0.0, 0.0]
+        } else {
+            // SAFETY: non-null and valid by the caller's contract.
+            let o = unsafe { *options };
+            if o.o_t_version != GS_O_T_VERSION {
+                return Err(GS_ERROR_bad_option_version);
+            }
+            o.offset
+        };
+        let basis = (!basis_set.is_null()).then(|| {
+            // SAFETY: non-null and valid by the caller's contract.
+            let b = unsafe { *basis_set };
+            Axis2 {
+                location: b.location,
+                axis: b.axis,
+                ref_direction: b.ref_direction,
+            }
+        });
+        let tag = with_session(|s| {
+            s.body_create_solid_block_with_offset_hole(x, y, z, radius, offset, basis.as_ref())
+        })?;
+        // SAFETY: body is non-null and valid by the caller's contract.
         unsafe { write_out(body, tag) }
     })
 }
@@ -491,11 +574,29 @@ mod tests {
                 GS_ERROR_session_already_started
             );
 
+            // Null output pointers must not allocate a body or consume a tag.
+            assert_eq!(
+                GS_BODY_create_solid_block(1.0, 2.0, 3.0, ptr::null(), ptr::null_mut()),
+                GS_ERROR_null_argument
+            );
+            assert_eq!(
+                GS_BODY_create_solid_block_with_hole(
+                    40.0,
+                    25.0,
+                    8.0,
+                    4.0,
+                    ptr::null(),
+                    ptr::null(),
+                    ptr::null_mut()
+                ),
+                GS_ERROR_null_argument
+            );
             assert_eq!(
                 GS_BODY_create_solid_block(1.0, 2.0, 3.0, ptr::null(), &mut body),
                 GS_ERROR_no_errors
             );
             assert_ne!(body, 0);
+            assert_eq!(body, 1, "rejected null outputs must not consume tags");
             assert_eq!(
                 GS_BODY_create_solid_block(-1.0, 2.0, 3.0, ptr::null(), &mut body),
                 GS_ERROR_invalid_argument

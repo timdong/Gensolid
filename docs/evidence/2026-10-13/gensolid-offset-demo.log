@@ -1,0 +1,22 @@
+   Compiling gensolid-api v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-api)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.80s
+     Running `target/debug/examples/creo_compare 6 -3`
+demo=creo_compare
+body_tag=1
+linear_precision_model_units=0.00000001
+angular_precision_radians=0.00000000001
+size_box_model_units=1000
+expected_size_mm=40x25x8
+expected_hole_diameter_mm=8
+hole_offset_xy_mm=[6.000,-3.000]
+bbox_min_mm=[-20.000,-12.500,0.000]
+bbox_max_mm=[20.000,12.500,8.000]
+face_count=7
+edge_count=14
+vertex_count=8
+body_check_faults=0
+cylindrical_wall_count=1
+circular_rim_count=2
+hole_matches_expected=true
+analytical_reference_volume_mm3=7597.876140
+bbox_matches_expected=true

@@ -1,0 +1,12 @@
+{"event": "start", "timestamp_ms": 1791886675040, "java_version": "21.0.1"}
+{"event": "directory", "timestamp_ms": 1791886689414, "path": "D:\\CAD\\liuxin\\Gensolid\\target\\creo-probes\\plate-offset-r4-82d10445d267\\"}
+{"event": "regenerated", "timestamp_ms": 1791886689458, "completed": true}
+{"event": "feature_count", "timestamp_ms": 1791886689469, "count": 2}
+{"event": "feature", "timestamp_ms": 1791886689501, "id": 2, "type_value": 68, "type_name": "坐标系", "status_value": 0, "status_name": "FEAT_ACTIVE"}
+{"event": "feature", "timestamp_ms": 1791886689507, "id": 4, "type_value": 22, "type_name": "导入特征", "status_value": 0, "status_name": "FEAT_ACTIVE"}
+{"event": "saved", "timestamp_ms": 1791886689702, "file": "gs_offset.prt"}
+{"event": "exported", "timestamp_ms": 1791886689724, "requested_file": "result.step"}
+{"event": "model_units", "timestamp_ms": 1791886689730, "length": "in"}
+{"event": "mass_property", "timestamp_ms": 1791886689739, "available": false, "volume": null, "area": null, "reason": "com.ptc.pfc.Implementation.pfcExceptions$XToolkitGeneralError: null"}
+{"event": "connection_ended", "timestamp_ms": 1791886689745, "completed": true}
+{"event": "completion", "timestamp_ms": 1791886689746, "success": true}

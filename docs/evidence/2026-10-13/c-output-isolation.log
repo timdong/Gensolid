@@ -1,0 +1,3 @@
+C and Python dynamic libraries have distinct exports in separate build directories.
+C test rerun after Python installation:
+C: all through-hole contracts passed

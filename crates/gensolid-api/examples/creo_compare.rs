@@ -94,6 +94,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("demo=creo_compare");
     println!("body_tag={body}");
+    println!(
+        "linear_precision_model_units={}",
+        model.precision().linear()
+    );
+    println!("angular_precision_radians={}", model.precision().angular());
+    println!("size_box_model_units={}", model.precision().size());
     println!("expected_size_mm={WIDTH}x{DEPTH}x{HEIGHT}");
     println!("expected_hole_diameter_mm={}", RADIUS * 2.0);
     println!("hole_offset_xy_mm=[{:.3},{:.3}]", offset[0], offset[1]);

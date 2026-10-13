@@ -63,8 +63,8 @@ fn basis_derivatives(span: usize, u: f64, p: usize, n: usize, knots: &[f64]) -> 
     }
 
     let mut ders = vec![vec![0.0; p + 1]; n + 1];
-    for j in 0..=p {
-        ders[0][j] = ndu[j][p];
+    for (j, row) in ndu.iter().enumerate() {
+        ders[0][j] = row[p];
     }
     let pi = p as isize;
     let mut a = [vec![0.0; p + 1], vec![0.0; p + 1]];
@@ -72,7 +72,7 @@ fn basis_derivatives(span: usize, u: f64, p: usize, n: usize, knots: &[f64]) -> 
         let ri = r as isize;
         let (mut s1, mut s2) = (0usize, 1usize);
         a[0][0] = 1.0;
-        for k in 1..=n.min(p) {
+        for (k, row) in ders.iter_mut().enumerate().skip(1).take(n.min(p)) {
             let ki = k as isize;
             let rk = ri - ki;
             let pk = (pi - ki) as usize;
@@ -93,7 +93,7 @@ fn basis_derivatives(span: usize, u: f64, p: usize, n: usize, knots: &[f64]) -> 
                 a[s2][k] = -a[s1][k - 1] / ndu[pk + 1][r];
                 d += a[s2][k] * ndu[r][pk];
             }
-            ders[k][r] = d;
+            row[r] = d;
             std::mem::swap(&mut s1, &mut s2);
         }
     }

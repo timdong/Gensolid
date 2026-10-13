@@ -72,6 +72,14 @@ typedef struct {
 // Tag of a body.
 typedef int32_t GS_BODY_t;
 
+// Options for [`GS_BODY_create_solid_block_with_hole`].
+typedef struct {
+  // Must be `GS_O_T_VERSION`.
+  int32_t o_t_version;
+  // Hole centre in the block's local XY plane; default is `[0, 0]`.
+  double offset[2];
+} GS_BODY_create_solid_block_with_hole_o_t;
+
 // Tag of a face.
 typedef int32_t GS_FACE_t;
 
@@ -172,6 +180,27 @@ GS_ERROR_code_t GS_BODY_create_solid_block(double x,
                                            double z,
                                            const GS_AXIS2_sf_t *basis_set,
                                            GS_BODY_t *body);
+
+// Initialises through-hole options to a centred hole.
+//
+// # Safety
+// `options` must be valid for writes.
+GS_ERROR_code_t GS_BODY_create_solid_block_with_hole_o_init(GS_BODY_create_solid_block_with_hole_o_t *options);
+
+// Creates a block with one circular through-hole along local Z. `radius` is a radius,
+// not a diameter. Null `basis_set` uses world axes; null `options` centres the hole.
+// The block is centred on the basis location. Touching or crossing a side is rejected.
+// This is a specialised analytic primitive, not a general Boolean operation.
+//
+// # Safety
+// `basis_set` and `options` must be null or valid for reads; `body` must be valid for writes.
+GS_ERROR_code_t GS_BODY_create_solid_block_with_hole(double x,
+                                                     double y,
+                                                     double z,
+                                                     double radius,
+                                                     const GS_AXIS2_sf_t *basis_set,
+                                                     const GS_BODY_create_solid_block_with_hole_o_t *options,
+                                                     GS_BODY_t *body);
 
 // Faces of a body.
 //

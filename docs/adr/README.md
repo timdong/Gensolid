@@ -11,3 +11,4 @@
 | [0005](0005-xt-first-class.md) | XT 读写是一等功能 |
 | [0006](0006-verification-first-rsi.md) | 验证器优先的 RSI 开发流程 |
 | [0007](0007-references-and-provenance.md) | 参考实现与代码来源 |
+| [0008](0008-through-hole-bindings.md) | 解析通孔基础体的跨语言契约 |

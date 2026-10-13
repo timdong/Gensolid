@@ -1,0 +1,21 @@
+{
+  "platform": "Linux/WSL x86_64",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cbindgen": "cbindgen 0.29.4",
+  "wasm_bindgen": "wasm-bindgen 0.2.129",
+  "node": "v22.22.0",
+  "cargo_lock_sha256": "9871065c90f6571dd10d17e35308d8a9d029dae8790e10bf8399584ccbaa6dd9",
+  "msrv_check": {
+    "rustc": "1.88.0",
+    "cargo": "1.99.0",
+    "result": "passed",
+    "scope": "workspace all targets, check only, offline; explicit RUSTC/RUSTDOC",
+    "rustup_install_manifest": "missing"
+  },
+  "windows_rust_build": "not_verified",
+  "python_test_runtime": "3.10.12",
+  "rust_default_tests_passed": 63,
+  "python_tests_passed": 4,
+  "probe_runner_tests_passed": 4
+}

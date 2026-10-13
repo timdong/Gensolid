@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "case_id": "plate-offset-r4",
+  "operation": "import_step",
+  "input_step": "../inputs/offset.step",
+  "part_name": "gs_offset",
+  "units": "mm",
+  "parameters": {"x": 40, "y": 25, "z": 8, "radius": 4, "offset": [6, -3]},
+  "basis": {"location": [0, 0, 4], "axis": [0, 0, 1], "ref_direction": [1, 0, 0]},
+  "precision_source": "Gensolid SessionOptions::default; Creo import settings remain independent",
+  "seed": null,
+  "input_provenance": "Existing independent build123d reference; not Gensolid STEP export"
+}

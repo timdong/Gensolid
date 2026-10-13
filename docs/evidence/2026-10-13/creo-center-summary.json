@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "run_id": "cbb8d73fa69e45b7b4d071060d69f18c",
+  "case": {
+    "schema_version": 1,
+    "case_id": "plate-center-r4",
+    "operation": "import_step",
+    "input_step": "../inputs/center.step",
+    "part_name": "gs_center",
+    "units": "mm",
+    "parameters": {
+      "x": 40,
+      "y": 25,
+      "z": 8,
+      "radius": 4,
+      "offset": [
+        0,
+        0
+      ]
+    },
+    "basis": {
+      "location": [
+        0,
+        0,
+        4
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "ref_direction": [
+        1,
+        0,
+        0
+      ]
+    },
+    "precision_source": "Gensolid SessionOptions::default; Creo import settings remain independent",
+    "seed": null,
+    "input_provenance": "Existing independent build123d reference; not Gensolid STEP export"
+  },
+  "started_utc": "2026-10-13T10:19:25.857069+00:00",
+  "duration_seconds": 30.487915938996593,
+  "success": true,
+  "process_returncode": 0,
+  "timeout": false,
+  "runner_error": null,
+  "failure_events": [],
+  "features": [
+    {
+      "event": "feature",
+      "timestamp_ms": 1791886779634,
+      "id": 2,
+      "type_value": 68,
+      "type_name": "坐标系",
+      "status_value": 0,
+      "status_name": "FEAT_ACTIVE"
+    },
+    {
+      "event": "feature",
+      "timestamp_ms": 1791886779637,
+      "id": 4,
+      "type_value": 22,
+      "type_name": "导入特征",
+      "status_value": 0,
+      "status_name": "FEAT_ACTIVE"
+    }
+  ],
+  "mass_property": {
+    "event": "mass_property",
+    "timestamp_ms": 1791886779799,
+    "available": false,
+    "volume": null,
+    "area": null,
+    "reason": "com.ptc.pfc.Implementation.pfcExceptions$XToolkitGeneralError: null"
+  },
+  "creo_install_root": "D:\\Program Files\\PTC\\Creo 10.0.8.0",
+  "sdk_jar_sha256": {
+    "pfcasync.jar": "668c570078a00a44e30f9ee14722cccb1f96576c652a80cc90156fccc9fb32f4",
+    "otk.jar": "8afd5082aae3674f66b5938394c0557ccc74c0cf1607f27712dd2d110d27720d"
+  },
+  "gensolid_revision": "0e92f4e119973670e0756a87690f7791fa1c6a51",
+  "tracked_patch_sha256": "0fd7d154616f121627dec65f51764bfca288dd7fbb217d51300689819755ed07",
+  "probe_source_sha256": "1e283d341fa68505ba5dac6008417ac00778eb8f7d9d92899c36cd84c03dd7f3",
+  "runner_source_sha256": "2737b9206559f5aacb24d20a51c247b8b076328dd1d08b6ced0e1407a9fe8b6d",
+  "artifacts": {
+    "in.step": "280df1ae16c554bb36e2ce2840b6084e3bd7b6e169bd1ece5db8d2640949b6b5",
+    "result.stp": "bd9cd6fa58bc313080b996c5471366dc3000315dacd0c9d7d9297d827f0c9090",
+    "gs_center.prt.1": "280111056bc4692f6002bd741427db1cd1414ff86aaa455b97db0160195ea5ae"
+  },
+  "owned_processes": [
+    {
+      "pid": 47996,
+      "parent": 6376,
+      "name": "java.exe",
+      "created": "2026-10-13T10:19:25.9019330Z",
+      "marked": true
+    },
+    {
+      "pid": 53612,
+      "parent": 47996,
+      "name": "conhost.exe",
+      "created": "2026-10-13T10:19:25.9086740Z",
+      "marked": false
+    },
+    {
+      "pid": 45124,
+      "parent": 47996,
+      "name": "pro_comm_msg.exe",
+      "created": "2026-10-13T10:19:26.0707920Z",
+      "marked": false
+    },
+    {
+      "pid": 49316,
+      "parent": 47996,
+      "name": "cmd.exe",
+      "created": "2026-10-13T10:19:30.6729220Z",
+      "marked": false
+    },
+    {
+      "pid": 33376,
+      "parent": 49316,
+      "name": "parametric.exe",
+      "created": "2026-10-13T10:19:30.8960570Z",
+      "marked": false
+    },
+    {
+      "pid": 31556,
+      "parent": 33376,
+      "name": "cmd.exe",
+      "created": "2026-10-13T10:19:31.4640920Z",
+      "marked": false
+    },
+    {
+      "pid": 36160,
+      "parent": 33376,
+      "name": "cmd.exe",
+      "created": "2026-10-13T10:19:31.4798470Z",
+      "marked": false
+    },
+    {
+      "pid": 35088,
+      "parent": 31556,
+      "name": "conhost.exe",
+      "created": "2026-10-13T10:19:31.4815930Z",
+      "marked": false
+    },
+    {
+      "pid": 21216,
+      "parent": 36160,
+      "name": "conhost.exe",
+      "created": "2026-10-13T10:19:31.4938170Z",
+      "marked": false
+    },
+    {
+      "pid": 11008,
+      "parent": 31556,
+      "name": "nmsd.exe",
+      "created": "2026-10-13T10:19:31.5463200Z",
+      "marked": false
+    },
+    {
+      "pid": 35024,
+      "parent": 36160,
+      "name": "xtop.exe",
+      "created": "2026-10-13T10:19:31.5561370Z",
+      "marked": false
+    },
+    {
+      "pid": 41664,
+      "parent": 35024,
+      "name": "pro_comm_msg.exe",
+      "created": "2026-10-13T10:19:32.4200740Z",
+      "marked": false
+    },
+    {
+      "pid": 15908,
+      "parent": 35024,
+      "name": "creoagent.exe",
+      "created": "2026-10-13T10:19:37.2093780Z",
+      "marked": false
+    },
+    {
+      "pid": 36780,
+      "parent": 15908,
+      "name": "genlwsc.exe",
+      "created": "2026-10-13T10:19:37.5802090Z",
+      "marked": false
+    },
+    {
+      "pid": 48332,
+      "parent": 36780,
+      "name": "zbcefr.exe",
+      "created": "2026-10-13T10:19:38.0205520Z",
+      "marked": false
+    },
+    {
+      "pid": 7260,
+      "parent": 36780,
+      "name": "zbcefr.exe",
+      "created": "2026-10-13T10:19:38.0284550Z",
+      "marked": false
+    },
+    {
+      "pid": 49284,
+      "parent": 36780,
+      "name": "zbcefr.exe",
+      "created": "2026-10-13T10:19:38.0513720Z",
+      "marked": false
+    }
+  ],
+  "cleanup_stopped": [
+    {
+      "pid": 11008,
+      "parent": 31556,
+      "name": "nmsd.exe",
+      "created": "2026-10-13T10:19:31.5463200Z",
+      "marked": false
+    },
+    {
+      "pid": 45124,
+      "parent": 47996,
+      "name": "pro_comm_msg.exe",
+      "created": "2026-10-13T10:19:26.0707920Z",
+      "marked": false
+    }
+  ],
+  "measurements": null,
+  "measurement_reason": "Probe records interchange only; independent geometry inspection is a separate step"
+}

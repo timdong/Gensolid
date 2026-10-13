@@ -57,6 +57,95 @@ impl Session {
             .map_err(to_js)
     }
 
+    /// Creates a centred block with a centred circular through-hole along world Z.
+    /// `radius` is a radius, not a diameter.
+    #[wasm_bindgen(js_name = bodyCreateSolidBlockWithHole)]
+    pub fn body_create_solid_block_with_hole(
+        &mut self,
+        x: f64,
+        y: f64,
+        z: f64,
+        radius: f64,
+    ) -> Result<Tag, JsError> {
+        self.inner
+            .body_create_solid_block_with_hole(x, y, z, radius, None)
+            .map_err(to_js)
+    }
+
+    /// Creates a block with a through-hole at local XY `offset` along world Z.
+    #[wasm_bindgen(js_name = bodyCreateSolidBlockWithOffsetHole)]
+    pub fn body_create_solid_block_with_offset_hole(
+        &mut self,
+        x: f64,
+        y: f64,
+        z: f64,
+        radius: f64,
+        offset: &[f64],
+    ) -> Result<Tag, JsError> {
+        let offset = offset
+            .try_into()
+            .map_err(|_| JsError::new("expected an offset of 2 numbers"))?;
+        self.inner
+            .body_create_solid_block_with_offset_hole(x, y, z, radius, offset, None)
+            .map_err(to_js)
+    }
+
+    /// Creates a centred through-hole block in the supplied coordinate system.
+    #[wasm_bindgen(js_name = bodyCreateSolidBlockWithHoleAt)]
+    #[allow(clippy::too_many_arguments)] // Exposes the public dimensions and frame without ABI changes.
+    pub fn body_create_solid_block_with_hole_at(
+        &mut self,
+        x: f64,
+        y: f64,
+        z: f64,
+        radius: f64,
+        location: &[f64],
+        axis: &[f64],
+        ref_direction: &[f64],
+    ) -> Result<Tag, JsError> {
+        self.body_create_solid_block_with_offset_hole_at(
+            x,
+            y,
+            z,
+            radius,
+            &[0.0, 0.0],
+            location,
+            axis,
+            ref_direction,
+        )
+    }
+
+    /// Creates a through-hole block with local XY offset in the supplied frame.
+    #[wasm_bindgen(js_name = bodyCreateSolidBlockWithOffsetHoleAt)]
+    #[allow(clippy::too_many_arguments)] // Exposes the public dimensions, offset and frame.
+    pub fn body_create_solid_block_with_offset_hole_at(
+        &mut self,
+        x: f64,
+        y: f64,
+        z: f64,
+        radius: f64,
+        offset: &[f64],
+        location: &[f64],
+        axis: &[f64],
+        ref_direction: &[f64],
+    ) -> Result<Tag, JsError> {
+        let triple = |v: &[f64]| -> Result<[f64; 3], JsError> {
+            v.try_into()
+                .map_err(|_| JsError::new("expected an array of 3 numbers"))
+        };
+        let basis = Axis2 {
+            location: triple(location)?,
+            axis: triple(axis)?,
+            ref_direction: triple(ref_direction)?,
+        };
+        let offset = offset
+            .try_into()
+            .map_err(|_| JsError::new("expected an offset of 2 numbers"))?;
+        self.inner
+            .body_create_solid_block_with_offset_hole(x, y, z, radius, offset, Some(&basis))
+            .map_err(to_js)
+    }
+
     /// Face tags of a body.
     #[wasm_bindgen(js_name = bodyAskFaces)]
     pub fn body_ask_faces(&mut self, body: Tag) -> Result<Vec<Tag>, JsError> {

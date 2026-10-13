@@ -1,0 +1,9 @@
+test_cleanup_is_batched_and_uses_identity (test_runner.RunnerTests) ... ok
+test_native_log_does_not_hide_json_events (test_runner.RunnerTests) ... ok
+test_only_java_marker_grants_root_ownership (test_runner.RunnerTests) ... ok
+test_preexisting_and_reused_pids_do_not_grant_ownership (test_runner.RunnerTests) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.005s
+
+OK
