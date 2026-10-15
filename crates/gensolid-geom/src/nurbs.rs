@@ -113,12 +113,12 @@ fn validate_knots(degree: usize, count: usize, knots: &[f64], direction: &str) -
             "{direction} degree must be at least 1"
         )));
     }
-    if count < degree + 1 {
+    if count <= degree {
         return Err(Error::invalid_argument(format!(
             "{direction}: need at least degree + 1 control points"
         )));
     }
-    if knots.len() != count + degree + 1 {
+    if count.checked_add(degree).and_then(|n| n.checked_add(1)) != Some(knots.len()) {
         return Err(Error::invalid_argument(format!(
             "{direction}: knot count must equal control point count + degree + 1"
         )));
@@ -131,6 +131,11 @@ fn validate_knots(degree: usize, count: usize, knots: &[f64], direction: &str) -
     if knots[degree] >= knots[count] {
         return Err(Error::degenerate(format!(
             "{direction}: parameter domain is empty"
+        )));
+    }
+    if !(knots[count] - knots[degree]).is_finite() {
+        return Err(Error::invalid_argument(format!(
+            "{direction}: parameter domain width must be finite"
         )));
     }
     // Knots are non-decreasing here, so `>=` means equal.
@@ -213,6 +218,19 @@ impl BCurve {
         ParamRange::bounded(self.knots[self.degree], self.knots[self.points.len()])
     }
 
+    /// Reverse the geometry while retaining the numerical parameter domain.
+    pub fn reversed(&self) -> Result<Self> {
+        let r = self.range();
+        Self::new(
+            self.degree,
+            self.knots.iter().rev().map(|t| r.lo + (r.hi - t)).collect(),
+            self.points.iter().rev().copied().collect(),
+            self.weights
+                .as_ref()
+                .map(|w| w.iter().rev().copied().collect()),
+        )
+    }
+
     /// Point and first derivative at `t` (clamped to the domain).
     pub fn eval(&self, t: f64) -> CurveDerivs {
         let p = self.degree;
@@ -220,12 +238,21 @@ impl BCurve {
         let t = self.range().normalize(t);
         let span = find_span(n, p, t, &self.knots);
         let ders = basis_derivatives(span, t, p, 1, &self.knots);
+        // Rational geometry is invariant under a common weight scale. Normalising
+        // the active weights prevents harmless common scales from overflowing the
+        // homogeneous coordinates (or underflowing their denominator).
+        let weight_scale = self.weights.as_ref().map_or(1.0, |weights| {
+            weights[span - p..=span].iter().copied().fold(0.0, f64::max)
+        });
+        // Evaluate relative to an active control point. This avoids subtracting
+        // large translated homogeneous coordinates in the quotient derivative.
+        let reference = self.points[span - p];
         let (mut a, mut da) = (Vec3::ZERO, Vec3::ZERO);
         let (mut w, mut dw) = (0.0, 0.0);
         for (k, (&n0, &n1)) in ders[0].iter().zip(&ders[1]).enumerate() {
             let i = span - p + k;
-            let wi = self.weights.as_ref().map_or(1.0, |ws| ws[i]);
-            let pi = self.points[i].to_vec() * wi;
+            let wi = self.weights.as_ref().map_or(1.0, |ws| ws[i] / weight_scale);
+            let pi = (self.points[i] - reference) * wi;
             a += pi * n0;
             da += pi * n1;
             w += wi * n0;
@@ -233,7 +260,7 @@ impl BCurve {
         }
         let c = a / w;
         CurveDerivs {
-            point: Point3::from_vec(c),
+            point: reference + c,
             d1: (da - c * dw) / w,
         }
     }
@@ -296,12 +323,77 @@ impl BSurface {
         (self.u_count, self.v_count)
     }
 
+    /// Knot vectors in the `u` and `v` directions.
+    pub fn knots(&self) -> (&[f64], &[f64]) {
+        (&self.u_knots, &self.v_knots)
+    }
+
+    /// Row-major control points.
+    pub fn points(&self) -> &[Point3] {
+        &self.points
+    }
+
+    /// Row-major weights, if rational.
+    pub fn weights(&self) -> Option<&[f64]> {
+        self.weights.as_deref()
+    }
+
     /// Parameter domains in `u` and `v`.
     pub fn ranges(&self) -> (ParamRange, ParamRange) {
         (
             ParamRange::bounded(self.u_knots[self.u_degree], self.u_knots[self.u_count]),
             ParamRange::bounded(self.v_knots[self.v_degree], self.v_knots[self.v_count]),
         )
+    }
+
+    /// Exact rational isoparametric curve. `constant_u` selects a fixed U value.
+    pub fn iso_curve(&self, constant_u: bool, parameter: f64) -> Result<BCurve> {
+        let (range, degree, count, knots) = if constant_u {
+            (self.ranges().0, self.u_degree, self.u_count, &self.u_knots)
+        } else {
+            (self.ranges().1, self.v_degree, self.v_count, &self.v_knots)
+        };
+        if !parameter.is_finite() || parameter < range.lo || parameter > range.hi {
+            return Err(Error::invalid_argument(
+                "isoparameter outside surface domain",
+            ));
+        }
+        let span = find_span(count - 1, degree, parameter, knots);
+        let basis = basis_derivatives(span, parameter, degree, 0, knots);
+        let other_count = if constant_u {
+            self.v_count
+        } else {
+            self.u_count
+        };
+        let mut points = Vec::with_capacity(other_count);
+        let mut weights = Vec::with_capacity(other_count);
+        for k in 0..other_count {
+            let mut h = [0.0; 4];
+            for (j, &basis_value) in basis[0].iter().enumerate() {
+                let i = span - degree + j;
+                let index = if constant_u {
+                    i * self.v_count + k
+                } else {
+                    k * self.v_count + i
+                };
+                let w = self.weights.as_ref().map_or(1.0, |w| w[index]) * basis_value;
+                let p = self.points[index];
+                for (a, b) in h.iter_mut().zip([p.x, p.y, p.z, 1.0]) {
+                    *a += b * w;
+                }
+            }
+            if !h[3].is_finite() || h[3] <= 0.0 {
+                return Err(Error::degenerate("invalid homogeneous isocurve weight"));
+            }
+            points.push(Point3::new(h[0] / h[3], h[1] / h[3], h[2] / h[3]));
+            weights.push(h[3]);
+        }
+        let (degree, knots) = if constant_u {
+            (self.v_degree, self.v_knots.clone())
+        } else {
+            (self.u_degree, self.u_knots.clone())
+        };
+        BCurve::new(degree, knots, points, Some(weights))
     }
 
     /// Point and first partial derivatives at `(u, v)` (clamped to the domain).
@@ -313,13 +405,26 @@ impl BSurface {
         let sv = find_span(self.v_count - 1, pv, v, &self.v_knots);
         let nu = basis_derivatives(su, u, pu, 1, &self.u_knots);
         let nv = basis_derivatives(sv, v, pv, 1, &self.v_knots);
+        let mut weight_scale: f64 = 1.0;
+        if let Some(weights) = &self.weights {
+            weight_scale = 0.0;
+            for i in su - pu..=su {
+                for j in sv - pv..=sv {
+                    weight_scale = weight_scale.max(weights[i * self.v_count + j]);
+                }
+            }
+        }
+        let reference = self.points[(su - pu) * self.v_count + sv - pv];
         let (mut a, mut au, mut av) = (Vec3::ZERO, Vec3::ZERO, Vec3::ZERO);
         let (mut w, mut wu, mut wv) = (0.0, 0.0, 0.0);
         for (k, (&u0, &u1)) in nu[0].iter().zip(&nu[1]).enumerate() {
             for (l, (&v0, &v1)) in nv[0].iter().zip(&nv[1]).enumerate() {
                 let idx = (su - pu + k) * self.v_count + (sv - pv + l);
-                let wi = self.weights.as_ref().map_or(1.0, |ws| ws[idx]);
-                let pw = self.points[idx].to_vec() * wi;
+                let wi = self
+                    .weights
+                    .as_ref()
+                    .map_or(1.0, |ws| ws[idx] / weight_scale);
+                let pw = (self.points[idx] - reference) * wi;
                 let (b, bu, bv) = (u0 * v0, u1 * v0, u0 * v1);
                 a += pw * b;
                 au += pw * bu;
@@ -331,7 +436,7 @@ impl BSurface {
         }
         let s = a / w;
         SurfaceDerivs {
-            point: Point3::from_vec(s),
+            point: reference + s,
             du: (au - s * wu) / w,
             dv: (av - s * wv) / w,
         }

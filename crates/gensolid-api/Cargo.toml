@@ -10,9 +10,11 @@ authors.workspace = true
 
 [dependencies]
 gensolid-core.workspace = true
+gensolid-geom.workspace = true
 gensolid-math.workspace = true
 gensolid-topo.workspace = true
 gensolid-check.workspace = true
+gensolid-modeling.workspace = true
 
 [lints]
 workspace = true

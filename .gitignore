@@ -15,6 +15,7 @@ bindings/wasm/pkg/
 
 # Private verifier assets never live in this repository
 verifier/private/
+tools/wasm/node_modules/
 
 # Creo session files written into the startup directory
 trail.txt

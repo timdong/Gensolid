@@ -12,8 +12,32 @@ authors.workspace = true
 name = "gensolid"
 crate-type = ["cdylib", "staticlib", "rlib"]
 
+[features]
+default = []
+smlib = ["dep:gensolid-core", "dep:gensolid-geom", "dep:gensolid-math", "dep:wasm-bindgen", "dep:js-sys"]
+
+smlib-validation = ["smlib"]
+
 [dependencies]
+gensolid-core = { workspace = true, optional = true }
+gensolid-geom = { workspace = true, optional = true }
+gensolid-math = { workspace = true, optional = true }
 gensolid-api.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
 
 [lints]
 workspace = true
+
+[[example]]
+name = "smlib_curves_surfaces"
+required-features = ["smlib"]
+
+[[example]]
+name = "smlib_modeling"
+required-features = ["smlib"]
+
+[target.'cfg(all(target_arch = "wasm32", not(target_os = "emscripten")))'.dependencies]
+wasm-bindgen = { workspace = true, optional = true }
+js-sys = { version = "0.3", optional = true }
