@@ -1,0 +1,11 @@
+    Checking gensolid-core v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-core)
+    Checking gensolid-math v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-math)
+    Checking gensolid-xt v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-xt)
+    Checking gensolid-geom v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-geom)
+    Checking gensolid-topo v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-topo)
+    Checking gensolid-check v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-check)
+    Checking gensolid-api v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-api)
+    Checking gensolid-wasm v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/bindings/wasm)
+    Checking gensolid-py v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/bindings/python)
+    Checking gensolid-ffi v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-ffi)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.07s

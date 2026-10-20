@@ -1,0 +1,313 @@
+{
+  "assessment_date": "2026-10-14",
+  "reference_path": "/mnt/d/CAD/liuxin/NURBS/usd-brep",
+  "origin": "git@github.com:NVIDIA-Omniverse/usd-brep.git",
+  "HEAD": "c9c5979f04cea8c38213004d4f04df0dcfb40d05",
+  "method": "Static source review; read-only access. Raw-byte SHA256 and HEAD comparison normalizing CRLF only. No upstream build, dependency installation, algorithm execution, or porting.",
+  "core_inventory": {
+    "cpp_h_files": 462,
+    "physical_lines_including_comments_and_disabled_code": 967172,
+    "files_without_Apache2_SPDX_in_first_12_lines": []
+  },
+  "files": [
+    {
+      "path": "LICENSE",
+      "sha256": "8bf1e49a84e1aa5495f07b6f5929dc03ce7d463dd64965910362884f56b5593b",
+      "line_count": 203,
+      "header_spdx": [],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sha256": "bddbb5cc4b7c22ad75e6a9c1312eb9c359db1168379102e0a16337a4bfd2569d",
+      "line_count": 545,
+      "header_spdx": [],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "README.md",
+      "sha256": "ec4d2472398ab6f67c8ad40783dc2ca510d390715dcbd9c30b781abf68d13835",
+      "line_count": 129,
+      "header_spdx": [],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "KNOWN_ISSUES.md",
+      "sha256": "1ecc1dc1e14921e662c291501e8cdfe729501f86802efba7d63221498f0fab15",
+      "line_count": 81,
+      "header_spdx": [
+        "<!-- SPDX-License-Identifier: Apache-2.0 -->"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "VERSION",
+      "sha256": "4ca8bbd3c595ee306226c6996b32b8d47a900217c55a7ed0cfc868ee444f34f1",
+      "line_count": 1,
+      "header_spdx": [],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/inc/SmEdge.h",
+      "sha256": "c59303a1cd9292b9ace3ba5e31a0cb1f8a393d112cc0ee95eb76848ebcb3264b",
+      "line_count": 590,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/inc/SmEdgeuse.h",
+      "sha256": "c7af540f5efffc87a87145713882245386a6d1466f22b26de4c46ed99cffb38c",
+      "line_count": 408,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmEdgeuse.cpp",
+      "sha256": "b20d03f9e2c4b63521dcf65e16f0f7fff758a09a09cb432d9bfac722a4cef1b4",
+      "line_count": 6692,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmPeriodicExtent1d.cpp",
+      "sha256": "b7ae185fbe1432b776ddaab1236c5e786168312259a578053068e0d7b41339b3",
+      "line_count": 1412,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/NL_CrvTool.cpp",
+      "sha256": "f1d0c2b5872f9c6a68828e42d9cc440a8188b8023d1225f62df8caf0609782c8",
+      "line_count": 5583,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmBSplineCurve.cpp",
+      "sha256": "a3a48a0f6f1372ca9d1ebfdf6b0443741247e9640b6757418b034b8a316b826b",
+      "line_count": 8242,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmBSplineCurveNLib.cpp",
+      "sha256": "30646a262116478bf25d129a53432c16bb4896a6e91fd8aad183cd2c81f37116",
+      "line_count": 4907,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmBSplineSurface.cpp",
+      "sha256": "eebe8c627aa00e407655b7ef9f963c633ea1df56920f16db2245c1ef8777f540",
+      "line_count": 6530,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmBSplineSurfaceNLib.cpp",
+      "sha256": "159b4879f3db1bd1f523725fb9a5f6c65894283b6c8270195a2f23f962c587eb",
+      "line_count": 8991,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmPrimitiveCreation.cpp",
+      "sha256": "d76a86ed271d0ca50c41049fb850579ea1b28603cd2c085809885bfef4a63858",
+      "line_count": 8127,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmGlobalSolver.cpp",
+      "sha256": "501b9e9330c522008042dc76fa0dd4778924aa05a65e51f05408f5c45f651809",
+      "line_count": 1961,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmLocalSolveNd.cpp",
+      "sha256": "495bb0c64323bc2e4fd2c70de17b4f3372febfc5e99edb85548e59c99ecbfa2a",
+      "line_count": 1416,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmSurfaceDropCurve.cpp",
+      "sha256": "09d7c9f0d3c48e326dee2abd0a2a57646b90459d64ffd2604767173024b3f7cb",
+      "line_count": 2246,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmSurfaceIntersector.cpp",
+      "sha256": "f994cd252483da82363bacb777097ac5b9a1f26fae71991702d46790b108bc5e",
+      "line_count": 8698,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmAdvSurfaceIntersector.cpp",
+      "sha256": "6b3ff6326d85da2f751a6be8531278c23eb966b34df6212281eb2cd4506d3b27",
+      "line_count": 1836,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmMerge.cpp",
+      "sha256": "f4b65506ee0941d2822a8531c3fcd0bb33ac59d85925bfd6ffaaf49229a6bfa8",
+      "line_count": 7862,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmTopologyIntersector.cpp",
+      "sha256": "013b514a9aeeaabdc1db97f409561d4e039c3cb01f47a808195af70aa9fe2dc8",
+      "line_count": 9367,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmIntegrator.cpp",
+      "sha256": "f7694b1f6f632f75088010c6211234fe00862d7290fcb0a08921d36eacd22fce",
+      "line_count": 889,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmGauss.cpp",
+      "sha256": "b6cacb05e33a5eb981b31bef4a24d392a25c2182917c82afd9ff61c6ec0a1f02",
+      "line_count": 1880,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmFaceProps.cpp",
+      "sha256": "7dd75435a6c092369c6da86fd1c0c163d2f6aac32115853b8bfcc1b7938b95de",
+      "line_count": 2916,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmObjProps.cpp",
+      "sha256": "513c0db613ef1524a1f6deb0545df151f40774b41f65f75d037955b4e996bbd4",
+      "line_count": 50,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SMLib/src/SmTess.cpp",
+      "sha256": "efbc643158fa2e915e0ca67fa2a0df5da6365d5955e81924928e961761e2c616",
+      "line_count": 14830,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SM_API/src/SmApiPrimitives.cpp",
+      "sha256": "45f4d1b44abc3890141d7949cf0e525f98d0d23ddd2b5d6d708b1c27848b0a2c",
+      "line_count": 1373,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SM_API/src/SmApiBrep.cpp",
+      "sha256": "cd1e605cbd6ccca7d0d52b8bb5820d5240946f01b63fd7056eae930c41d5b462",
+      "line_count": 2633,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/SM_API/src/SmApiImportExport.cpp",
+      "sha256": "5bf0f7065da5b198b3fab74cdba6e86f6b1e9b4fccf32a6a11e028f7e38d4aef",
+      "line_count": 113,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/BREP_STAGING/README.md",
+      "sha256": "a97dc80e11c744caa076d77408d7745732322fd362968b93d02b8a1ecf4ec8cb",
+      "line_count": 47,
+      "header_spdx": [
+        "<!-- SPDX-License-Identifier: Apache-2.0 -->"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/BREP_STAGING/inc/BrepSourceData.h",
+      "sha256": "c48a9fc94c5e1634546a2d6fd3cf24c772edfa1ba3fc2354a65aed1fa42798c2",
+      "line_count": 122,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/USD_BREP_UTILS/src/UsdBrepKnots.cpp",
+      "sha256": "ba6738b63667c343ab021d630bb501bef5fae2621862374789c1c55ac99bf474",
+      "line_count": 133,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    },
+    {
+      "path": "source/USD_BREP_UTILS/src/UsdBrepGeometryEval.cpp",
+      "sha256": "c9ac2c7863fdb453f1d89e8f9e0029e279d63ee42879793f05cab2218127e4ef",
+      "line_count": 1960,
+      "header_spdx": [
+        "// SPDX-License-Identifier: Apache-2.0"
+      ],
+      "matches_HEAD_ignoring_CRLF": true
+    }
+  ],
+  "findings_scope": "License header inventory is not a complete provenance audit. Known-issue measurements are upstream claims; branch findings are static observations without runtime reproduction."
+}

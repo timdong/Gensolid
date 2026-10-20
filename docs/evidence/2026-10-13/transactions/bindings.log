@@ -1,0 +1,54 @@
+WARN: Skip gensolid-ffi::SESSION - (not `no_mangle`).
+WARN: Skip gensolid-ffi::HEADER - (not `pub`).
+   Compiling gensolid-core v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-core)
+   Compiling gensolid-math v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-math)
+   Compiling gensolid-geom v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-geom)
+   Compiling gensolid-topo v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-topo)
+   Compiling gensolid-check v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-check)
+   Compiling gensolid-api v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-api)
+   Compiling gensolid-ffi v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-ffi)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.96s
+body 1: 0 faults, 8 vertices
+  vertex 2: (9, -2, -3)
+  vertex 3: (9, 2, -3)
+  vertex 4: (11, 2, -3)
+  vertex 5: (11, -2, -3)
+  vertex 6: (9, -2, 3)
+  vertex 7: (11, -2, 3)
+  vertex 8: (11, 2, 3)
+  vertex 9: (9, 2, 3)
+C: all through-hole contracts passed
+🐍 Found CPython 3.10 at /tmp/gensolid-dev-venv/bin/python
+🔗 Found pyo3 bindings with abi3-py3.9 support
+   Compiling gensolid-core v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-core)
+   Compiling pyo3-ffi v0.29.3
+   Compiling pyo3 v0.29.3
+   Compiling gensolid-math v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-math)
+   Compiling gensolid-geom v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-geom)
+   Compiling gensolid-topo v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-topo)
+   Compiling gensolid-check v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-check)
+   Compiling gensolid-api v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-api)
+   Compiling gensolid-py v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/bindings/python)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.38s
+📦 Built wheel for abi3 Python ≥ 3.9 to /tmp/.tmpapKcNv/gensolid-0.1.0-cp39-abi3-linux_x86_64.whl
+✏️ Setting installed package as editable
+🛠 Installed gensolid-0.1.0
+test_array_and_tag_errors (test_through_hole.ThroughHoleTests) ... ok
+test_centred_and_offset_plate (test_through_hole.ThroughHoleTests) ... ok
+test_rejected_input_does_not_consume_tag (test_through_hole.ThroughHoleTests) ... ok
+test_rotated_frame (test_through_hole.ThroughHoleTests) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+OK
+   Compiling gensolid-core v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-core)
+   Compiling wasm-bindgen v0.2.129
+   Compiling gensolid-math v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-math)
+   Compiling gensolid-geom v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-geom)
+   Compiling gensolid-topo v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-topo)
+   Compiling gensolid-check v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-check)
+   Compiling gensolid-api v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-api)
+   Compiling gensolid-wasm v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/bindings/wasm)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.21s
+WASM: all through-hole contracts passed

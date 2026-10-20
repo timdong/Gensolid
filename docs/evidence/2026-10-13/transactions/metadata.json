@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-13",
+  "task_ids": [
+    "GS-007",
+    "GS-008"
+  ],
+  "repo": "/mnt/d/CAD/liuxin/Gensolid",
+  "base_commit": "0a882e9dc2fa11afcbb25912f62662ebff084a0f",
+  "state": "working tree; changes are not committed; unrelated pre-existing CRLF differences are excluded from semantic patch",
+  "platform": "Linux/WSL x86_64",
+  "toolchain": {
+    "rustc": "1.99.0",
+    "cargo": "1.99.0",
+    "msrv_rustc": "1.88.0",
+    "cbindgen": "0.29.4",
+    "wasm_bindgen": "0.2.129",
+    "node": "22.22.0",
+    "python": "3.10.12",
+    "maturin": "1.15.0"
+  },
+  "rust_default_tests_passed": 81,
+  "validation": [
+    {
+      "log": "rust-tests.log",
+      "reproduction_command": "cargo +stable test --locked",
+      "exit_code": 0
+    },
+    {
+      "log": "clippy.log",
+      "reproduction_command": "cargo +stable clippy --workspace --all-targets --locked -- -D warnings",
+      "exit_code": 0
+    },
+    {
+      "log": "fmt.log",
+      "reproduction_command": "cargo +stable fmt --all -- --check",
+      "exit_code": 0
+    },
+    {
+      "log": "bindings.log",
+      "reproduction_command": "VIRTUAL_ENV=/tmp/gensolid-dev-venv bash scripts/validate-bindings.sh",
+      "exit_code": 0
+    },
+    {
+      "log": "msrv.log",
+      "reproduction_command": "RUSTC=/root/.rustup/toolchains/1.88.0-x86_64-unknown-linux-gnu/bin/rustc RUSTDOC=/root/.rustup/toolchains/1.88.0-x86_64-unknown-linux-gnu/bin/rustdoc CARGO_TARGET_DIR=/tmp/gensolid-msrv-check cargo +stable check --workspace --all-targets --locked --offline",
+      "exit_code": 0
+    },
+    {
+      "log": "demo.log",
+      "reproduction_command": "cargo +stable run --locked -p gensolid-api --example transaction_recovery",
+      "exit_code": 0
+    }
+  ],
+  "source_sha256": {
+    "Cargo.lock": "9871065c90f6571dd10d17e35308d8a9d029dae8790e10bf8399584ccbaa6dd9",
+    "crates/gensolid-core/src/arena.rs": "c00872c96a19d7959e20719e8a4c19b10b7a7548921f3ffbcf48d831234754d8",
+    "crates/gensolid-geom/src/store.rs": "2e0516417cca5a894ad4b33514fded9bd7aee8384e0ff7d81216d9ea1c104cb7",
+    "crates/gensolid-topo/src/model.rs": "f7685c3b67e73588bc0373d685b52c808b5ce1f272b7458d921f9266e33d68d4",
+    "crates/gensolid-topo/src/block.rs": "34c1f76c71fc977325a614aeb2aece4001d94d38a687ddb0986cf56f51433333",
+    "crates/gensolid-topo/src/holed_block.rs": "8486befd55a719cbf70e5d94eaca7a435e1b23331026d821e2b541aac5e50a08",
+    "crates/gensolid-topo/src/lib.rs": "a92e8604c43ffe9feb116763a8a817c2bf6d2b219df8aebd4699bff53fb18108",
+    "crates/gensolid-api/src/lib.rs": "394917f7a492a35c1f6ef0b7cccbe8ba60e5bf3b86ed2b069f0e6a46edacb740",
+    "crates/gensolid-api/tests/transactions.rs": "14a1d19522684a371646b02c9ca80b726cab2663eb3967927b7a0e0012c822d9",
+    "crates/gensolid-api/examples/transaction_recovery.rs": "0a16a1ae8c60aa9ddf3c8f12b993fac477298ecfdf2981b7b0f780d3a3b1ed4f",
+    "scripts/validate-bindings.sh": "6eeb3bdc3294759186b4fe75c9a1e86406576b660fcf88d7a4312f1fab5290af",
+    "docs/adr/0009-trimmed-topology.md": "3e57a8429cebc8b8454e3bbd10ab3b8abecf0f8c3bef916aa21be0544239dff1",
+    "docs/adr/0010-atomic-model-edits.md": "52aa28b09555be5e1c49acf0f5a5e6a8716b6234407fc2e49b5aea706e5afe58"
+  },
+  "limits": [
+    "Windows native build not verified",
+    "trim metadata/p-curves/seams/split not implemented",
+    "no new Creo replay; previous geometry unchanged",
+    "OOM abort/process termination/panic=abort not recoverable"
+  ]
+}

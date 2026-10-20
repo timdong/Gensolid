@@ -1,0 +1,4 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+    Checking gensolid-api v0.1.0 (/mnt/d/CAD/liuxin/Gensolid/crates/gensolid-api)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.80s

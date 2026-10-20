@@ -1,0 +1,9 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.26s
+     Running `target/debug/examples/transaction_recovery`
+demo=transaction_recovery
+injected_limit=fins:48
+failure_code=CapacityExceeded
+existing_body_preserved=true
+next_tag_preserved=true
+committed_body_count=2
+recovered_body_faults=0

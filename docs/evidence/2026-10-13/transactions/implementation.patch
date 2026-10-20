@@ -1,0 +1,1188 @@
+diff --git a/crates/gensolid-api/src/lib.rs b/crates/gensolid-api/src/lib.rs
+index c380b22..8c5d816 100644
+--- a/crates/gensolid-api/src/lib.rs
++++ b/crates/gensolid-api/src/lib.rs
+@@ -5,12 +5,13 @@
+ //! `body_ask_faces`). The C ABI (`gensolid-ffi`), Python and WASM bindings are thin
+ //! wrappers over this crate, so all of them share one set of semantics.
+ 
+-use std::collections::HashMap;
++use std::collections::{HashMap, HashSet};
+ 
+ pub use gensolid_check::FaultKind;
+ use gensolid_check::{CheckOptions, check_body};
+ pub use gensolid_core::{Error, ErrorCode, Precision, Result};
+ use gensolid_math::{Frame, Point3, Vec3};
++pub use gensolid_topo::ModelLimits;
+ use gensolid_topo::{BodyId, EntityRef, Model, make_block, make_block_with_offset_hole};
+ 
+ /// Integer handle to an entity. Tags are never reused within a session.
+@@ -76,6 +77,8 @@ pub struct Session {
+     model: Model,
+     entities: Vec<EntityRef>,
+     tags: HashMap<EntityRef, Tag>,
++    #[cfg(test)]
++    tag_limit: usize,
+ }
+ 
+ fn point(p: [f64; 3]) -> Point3 {
+@@ -89,10 +92,18 @@ fn vector(v: [f64; 3]) -> Vec3 {
+ impl Session {
+     /// Starts a session.
+     pub fn start(options: SessionOptions) -> Self {
++        Self::start_with_limits(options, ModelLimits::default())
++    }
++
++    /// Starts a session with deterministic per-arena live-entity limits.
++    /// Existing bindings continue to use the default limits.
++    pub fn start_with_limits(options: SessionOptions, limits: ModelLimits) -> Self {
+         Self {
+-            model: Model::new(options.precision),
++            model: Model::with_limits(options.precision, limits),
+             entities: Vec::new(),
+             tags: HashMap::new(),
++            #[cfg(test)]
++            tag_limit: usize::MAX,
+         }
+     }
+ 
+@@ -101,19 +112,89 @@ impl Session {
+         &self.model
+     }
+ 
++    fn reserve_tags(&mut self, additional: usize) -> Result<()> {
++        let total = self
++            .entities
++            .len()
++            .checked_add(additional)
++            .ok_or_else(|| Error::new(ErrorCode::CapacityExceeded, "tag space exhausted"))?;
++        Tag::try_from(total)
++            .map_err(|_| Error::new(ErrorCode::CapacityExceeded, "tag space exhausted"))?;
++        #[cfg(test)]
++        if total > self.tag_limit {
++            return Err(Error::new(
++                ErrorCode::CapacityExceeded,
++                "test tag limit reached",
++            ));
++        }
++        self.entities
++            .try_reserve(additional)
++            .map_err(|_| Error::new(ErrorCode::CapacityExceeded, "tag allocation failed"))?;
++        self.tags
++            .try_reserve(additional)
++            .map_err(|_| Error::new(ErrorCode::CapacityExceeded, "tag map allocation failed"))?;
++        Ok(())
++    }
++
++    fn publish_tag(&mut self, entity: EntityRef, tag: Tag) {
++        self.entities.push(entity);
++        self.tags.insert(entity, tag);
++    }
++
+     fn tag(&mut self, entity: EntityRef) -> Result<Tag> {
+         if let Some(&tag) = self.tags.get(&entity) {
+             return Ok(tag);
+         }
++        self.reserve_tags(1)?;
+         let tag = Tag::try_from(self.entities.len() + 1)
+             .map_err(|_| Error::new(ErrorCode::CapacityExceeded, "tag space exhausted"))?;
+-        self.entities.push(entity);
+-        self.tags.insert(entity, tag);
++        self.publish_tag(entity, tag);
+         Ok(tag)
+     }
+ 
+     fn tags(&mut self, entities: impl IntoIterator<Item = EntityRef>) -> Result<Vec<Tag>> {
+-        entities.into_iter().map(|e| self.tag(e)).collect()
++        let entities: Vec<_> = entities.into_iter().collect();
++        let missing: HashSet<_> = entities
++            .iter()
++            .copied()
++            .filter(|entity| !self.tags.contains_key(entity))
++            .collect();
++        self.reserve_tags(missing.len())?;
++        let mut out = Vec::new();
++        out.try_reserve(entities.len())
++            .map_err(|_| Error::new(ErrorCode::CapacityExceeded, "tag result allocation failed"))?;
++        for entity in entities {
++            out.push(self.tag(entity)?);
++        }
++        Ok(out)
++    }
++
++    fn create_checked_body(
++        &mut self,
++        build: impl FnOnce(&mut Model) -> Result<BodyId>,
++    ) -> Result<Tag> {
++        self.reserve_tags(1)?;
++        let tag = Tag::try_from(self.entities.len() + 1)
++            .map_err(|_| Error::new(ErrorCode::CapacityExceeded, "tag space exhausted"))?;
++        let body = self.model.transaction(|model| {
++            let body = build(model)?;
++            let report = check_body(model, body, &CheckOptions::default())?;
++            if !report.faults.is_empty() {
++                return Err(Error::internal(format!(
++                    "constructed body failed validation: {:?}",
++                    report.faults
++                )));
++            }
++            if report.unchecked > 0 {
++                return Err(Error::unimplemented(format!(
++                    "{} body checks are unavailable",
++                    report.unchecked
++                )));
++            }
++            Ok(body)
++        })?;
++        self.publish_tag(EntityRef::Body(body), tag);
++        Ok(tag)
+     }
+ 
+     fn entity(&self, tag: Tag) -> Result<EntityRef> {
+@@ -174,8 +255,7 @@ impl Session {
+                 &precision,
+             )?,
+         };
+-        let body = make_block(&mut self.model, x, y, z, &frame)?;
+-        self.tag(EntityRef::Body(body))
++        self.create_checked_body(|model| make_block(model, x, y, z, &frame))
+     }
+ 
+     /// Creates a solid block with a centred cylindrical through-hole along the basis Z
+@@ -214,8 +294,9 @@ impl Session {
+                 self.model.precision(),
+             )?,
+         };
+-        let body = make_block_with_offset_hole(&mut self.model, x, y, z, radius, offset, &frame)?;
+-        self.tag(EntityRef::Body(body))
++        self.create_checked_body(|model| {
++            make_block_with_offset_hole(model, x, y, z, radius, offset, &frame)
++        })
+     }
+ 
+     /// Faces of a body.
+@@ -335,4 +416,115 @@ mod tests {
+             );
+         }
+     }
++    #[test]
++    fn tag_capacity_is_checked_before_building() {
++        let mut session = Session::start(SessionOptions::default());
++        let old = session
++            .body_create_solid_block(40.0, 25.0, 8.0, None)
++            .unwrap();
++        session.tag_limit = session.entities.len();
++        let before_entities = session.entities.clone();
++        let before_tags = session.tags.clone();
++        assert_eq!(
++            session
++                .body_create_solid_block_with_hole(40.0, 25.0, 8.0, 4.0, None)
++                .unwrap_err()
++                .code(),
++            ErrorCode::CapacityExceeded
++        );
++        assert_eq!(session.model.bodies().count(), 1);
++        assert_eq!(session.model.geom().curve_count(), 12);
++        assert_eq!(session.entities, before_entities);
++        assert_eq!(session.tags, before_tags);
++        assert!(session.body_check(old).unwrap().is_empty());
++        session.tag_limit = usize::MAX;
++        assert_eq!(
++            session
++                .body_create_solid_block(30.0, 20.0, 5.0, None)
++                .unwrap(),
++            2
++        );
++    }
++
++    #[test]
++    fn batch_tag_failure_does_not_publish_partial_results() {
++        let mut session = Session::start(SessionOptions::default());
++        let body = session
++            .body_create_solid_block(40.0, 25.0, 8.0, None)
++            .unwrap();
++        let before_entities = session.entities.clone();
++        let before_tags = session.tags.clone();
++        session.tag_limit = 3;
++        assert_eq!(
++            session.body_ask_faces(body).unwrap_err().code(),
++            ErrorCode::CapacityExceeded
++        );
++        assert_eq!(session.entities, before_entities);
++        assert_eq!(session.tags, before_tags);
++        session.tag_limit = usize::MAX;
++        assert_eq!(session.body_ask_faces(body).unwrap(), [2, 3, 4, 5, 6, 7]);
++        assert!(session.body_check(body).unwrap().is_empty());
++    }
++
++    #[test]
++    fn batch_tag_reservation_counts_distinct_missing_entities() {
++        let mut session = Session::start(SessionOptions::default());
++        let body = session
++            .body_create_solid_block(40.0, 25.0, 8.0, None)
++            .unwrap();
++        let id = session.body_id(body).unwrap();
++        let faces = session.model.body_faces(id).unwrap();
++        session.tag_limit = 3;
++        let result = session
++            .tags([
++                EntityRef::Face(faces[0]),
++                EntityRef::Face(faces[0]),
++                EntityRef::Face(faces[1]),
++            ])
++            .unwrap();
++        assert_eq!(result, [2, 2, 3]);
++        assert_eq!(session.entities.len(), 3);
++    }
++
++    #[test]
++    fn checker_rejection_restores_existing_edits_and_tags() {
++        let mut session = Session::start(SessionOptions::default());
++        let old = session
++            .body_create_solid_block(40.0, 25.0, 8.0, None)
++            .unwrap();
++        let body = session.body_id(old).unwrap();
++        let face = session.model.body_faces(body).unwrap()[0];
++        let lp = session.model.face(face).unwrap().loops[0];
++        let before_entities = session.entities.clone();
++        let before_tags = session.tags.clone();
++        let error = session
++            .create_checked_body(|model| {
++                model.raw().loop_mut(lp)?.fins.clear();
++                Ok(body)
++            })
++            .unwrap_err();
++        assert_eq!(error.code(), ErrorCode::Internal);
++        assert_eq!(session.entities, before_entities);
++        assert_eq!(session.tags, before_tags);
++        assert!(session.body_check(old).unwrap().is_empty());
++        let error = session
++            .create_checked_body(|model| {
++                let new = make_block(model, 30.0, 20.0, 5.0, &Frame::WORLD)?;
++                let face = model.body_faces(new)?[0];
++                model.raw().face_mut(face)?.surface = None;
++                Ok(new)
++            })
++            .unwrap_err();
++        assert_eq!(error.code(), ErrorCode::Internal);
++        assert_eq!(session.model.bodies().count(), 1);
++        assert_eq!(session.model.geom().surface_count(), 6);
++        assert_eq!(session.entities, before_entities);
++        assert_eq!(session.tags, before_tags);
++        assert_eq!(
++            session
++                .body_create_solid_block(30.0, 20.0, 5.0, None)
++                .unwrap(),
++            2
++        );
++    }
+ }
+diff --git a/crates/gensolid-core/src/arena.rs b/crates/gensolid-core/src/arena.rs
+index 774ddfc..e1de35a 100644
+--- a/crates/gensolid-core/src/arena.rs
++++ b/crates/gensolid-core/src/arena.rs
+@@ -4,6 +4,8 @@ use std::cmp::Ordering;
+ use std::fmt;
+ use std::hash::{Hash, Hasher};
+ use std::marker::PhantomData;
++use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
++use std::sync::{Arc, OnceLock};
+ 
+ use crate::error::{Error, ErrorCode, Result};
+ 
+@@ -78,6 +80,7 @@ impl<T> fmt::Debug for Id<T> {
+     }
+ }
+ 
++#[derive(Clone)]
+ struct Slot<T> {
+     generation: u32,
+     value: Option<T>,
+@@ -88,6 +91,25 @@ pub struct Arena<T> {
+     slots: Vec<Slot<T>>,
+     free: Vec<u32>,
+     len: usize,
++    limit: usize,
++    next_generation: OnceLock<Arc<AtomicU64>>,
++}
++
++impl<T: Clone> Clone for Arena<T> {
++    fn clone(&self) -> Self {
++        // Initialize even an empty arena before cloning, so both sides share future issuance.
++        let allocator = Arc::clone(
++            self.next_generation
++                .get_or_init(|| Arc::new(AtomicU64::new(0))),
++        );
++        Self {
++            slots: self.slots.clone(),
++            free: self.free.clone(),
++            len: self.len,
++            limit: self.limit,
++            next_generation: OnceLock::from(allocator),
++        }
++    }
+ }
+ 
+ impl<T> Default for Arena<T> {
+@@ -99,10 +121,19 @@ impl<T> Default for Arena<T> {
+ impl<T> Arena<T> {
+     /// Creates an empty arena.
+     pub const fn new() -> Self {
++        Self::with_limit(usize::MAX)
++    }
++
++    /// Creates an arena with at most `limit` live values; does not preallocate storage.
++    /// Clones share the generation allocator, so restoring a clone cannot revive IDs
++    /// issued during a failed edit. Generations are never wrapped.
++    pub const fn with_limit(limit: usize) -> Self {
+         Self {
+             slots: Vec::new(),
+             free: Vec::new(),
+             len: 0,
++            limit,
++            next_generation: OnceLock::new(),
+         }
+     }
+ 
+@@ -118,25 +149,65 @@ impl<T> Arena<T> {
+ 
+     /// Stores `value` and returns its handle.
+     pub fn insert(&mut self, value: T) -> Result<Id<T>> {
+-        if let Some(index) = self.free.pop() {
+-            let Some(slot) = self.slots.get_mut(index as usize) else {
+-                return Err(Error::new(
+-                    ErrorCode::Internal,
+-                    "arena free list is corrupt",
+-                ));
+-            };
++        if self.len >= self.limit {
++            return Err(Error::new(
++                ErrorCode::CapacityExceeded,
++                "arena live-value limit reached",
++            ));
++        }
++        let reusable = self.free.last().copied();
++        let index = if let Some(index) = reusable {
++            if self
++                .slots
++                .get(index as usize)
++                .is_none_or(|slot| slot.value.is_some())
++            {
++                return Err(Error::internal("arena free list is corrupt"));
++            }
++            index
++        } else {
++            let index = u32::try_from(self.slots.len())
++                .map_err(|_| Error::new(ErrorCode::CapacityExceeded, "arena is full"))?;
++            self.slots
++                .try_reserve(1)
++                .map_err(|_| Error::new(ErrorCode::CapacityExceeded, "arena allocation failed"))?;
++            index
++        };
++        let allocator = self
++            .next_generation
++            .get_or_init(|| Arc::new(AtomicU64::new(0)));
++        let mut next = allocator.load(AtomicOrdering::Relaxed);
++        let generation = loop {
++            let generation = u32::try_from(next).map_err(|_| {
++                Error::new(ErrorCode::CapacityExceeded, "arena generations exhausted")
++            })?;
++            // The successful conversion bounds next by u32::MAX, so next + 1 fits u64.
++            match allocator.compare_exchange_weak(
++                next,
++                next + 1,
++                AtomicOrdering::Relaxed,
++                AtomicOrdering::Relaxed,
++            ) {
++                Ok(_) => break generation,
++                Err(current) => next = current,
++            }
++        };
++        if reusable.is_some() {
++            let slot = self
++                .slots
++                .get_mut(index as usize)
++                .ok_or_else(|| Error::internal("arena free list is corrupt"))?;
++            self.free.pop();
++            slot.generation = generation;
+             slot.value = Some(value);
+-            self.len += 1;
+-            return Ok(Id::new(index, slot.generation));
++        } else {
++            self.slots.push(Slot {
++                generation,
++                value: Some(value),
++            });
+         }
+-        let index = u32::try_from(self.slots.len())
+-            .map_err(|_| Error::new(ErrorCode::CapacityExceeded, "arena is full"))?;
+-        self.slots.push(Slot {
+-            generation: 0,
+-            value: Some(value),
+-        });
+         self.len += 1;
+-        Ok(Id::new(index, 0))
++        Ok(Id::new(index, generation))
+     }
+ 
+     /// Returns the value for `id`, or `None` if it was removed or never existed.
+@@ -162,14 +233,13 @@ impl<T> Arena<T> {
+ 
+     /// Removes and returns the value for `id`.
+     ///
+-    /// Generations wrap after 2^32 reuses of one slot.
++    /// A removed ID never becomes valid again; insertion issues a fresh generation.
+     pub fn remove(&mut self, id: Id<T>) -> Option<T> {
+         let slot = self.slots.get_mut(id.index as usize)?;
+         if slot.generation != id.generation {
+             return None;
+         }
+         let value = slot.value.take()?;
+-        slot.generation = slot.generation.wrapping_add(1);
+         self.free.push(id.index);
+         self.len -= 1;
+         Some(value)
+@@ -211,4 +281,65 @@ mod tests {
+         let values: Vec<_> = arena.iter().map(|(_, v)| *v).collect();
+         assert_eq!(values, vec![0, 2, 3]);
+     }
++    #[test]
++    fn rollback_does_not_revive_temporary_ids() {
++        let mut arena = Arena::new();
++        let original = arena.insert("original").unwrap();
++        let checkpoint = arena.clone();
++        arena.remove(original);
++        let temporary = arena.insert("temporary").unwrap();
++        arena = checkpoint;
++        assert_eq!(arena.get(original), Some(&"original"));
++        assert!(!arena.contains(temporary));
++        arena.remove(original);
++        let later = arena.insert("later").unwrap();
++        assert_eq!(later.index(), temporary.index());
++        assert_ne!(later, temporary);
++        assert!(!arena.contains(original));
++        assert!(!arena.contains(temporary));
++    }
++
++    #[test]
++    fn empty_snapshot_shares_generation_issuance() {
++        let mut arena = Arena::new();
++        let checkpoint = arena.clone();
++        let temporary = arena.insert(1).unwrap();
++        arena = checkpoint;
++        let later = arena.insert(2).unwrap();
++        assert_eq!(later.index(), temporary.index());
++        assert_ne!(later, temporary);
++        assert!(!arena.contains(temporary));
++    }
++
++    #[test]
++    fn live_value_limit_allows_removal_and_reuse() {
++        let mut arena = Arena::with_limit(1);
++        let id = arena.insert(1).unwrap();
++        assert_eq!(
++            arena.insert(2).unwrap_err().code(),
++            ErrorCode::CapacityExceeded
++        );
++        assert_eq!(arena.len(), 1);
++        assert_eq!(arena.remove(id), Some(1));
++        assert!(arena.insert(3).is_ok());
++        assert!(!arena.contains(id));
++    }
++
++    #[test]
++    fn exhausted_generations_return_error_without_wrapping() {
++        let mut arena = Arena::new();
++        arena
++            .next_generation
++            .get_or_init(|| Arc::new(AtomicU64::new(0)))
++            .store(u64::from(u32::MAX), AtomicOrdering::Relaxed);
++        let last = arena.insert(1).unwrap();
++        assert_eq!(last.generation(), u32::MAX);
++        arena.remove(last);
++        assert_eq!(
++            arena.insert(2).unwrap_err().code(),
++            ErrorCode::CapacityExceeded
++        );
++        assert_eq!(arena.len(), 0);
++        assert!(!arena.contains(last));
++    }
+ }
+diff --git a/crates/gensolid-geom/src/store.rs b/crates/gensolid-geom/src/store.rs
+index 3907f97..83ca6ff 100644
+--- a/crates/gensolid-geom/src/store.rs
++++ b/crates/gensolid-geom/src/store.rs
+@@ -28,7 +28,7 @@ pub struct CurveProjection {
+ ///
+ /// Procedural surfaces may only reference geometry that already exists, so the reference
+ /// graph is acyclic by construction and evaluation always terminates.
+-#[derive(Default)]
++#[derive(Clone, Default)]
+ pub struct GeomStore {
+     curves: Arena<Curve>,
+     surfaces: Arena<Surface>,
+@@ -40,6 +40,24 @@ impl GeomStore {
+         Self::default()
+     }
+ 
++    /// Creates a store with per-class live geometry limits, without preallocation.
++    pub fn with_limits(curves: usize, surfaces: usize) -> Self {
++        Self {
++            curves: Arena::with_limit(curves),
++            surfaces: Arena::with_limit(surfaces),
++        }
++    }
++
++    /// All live curves in storage order, for read-only inspection.
++    pub fn curves(&self) -> impl Iterator<Item = (CurveId, &Curve)> {
++        self.curves.iter()
++    }
++
++    /// All live surfaces in storage order, for read-only inspection.
++    pub fn surfaces(&self) -> impl Iterator<Item = (SurfaceId, &Surface)> {
++        self.surfaces.iter()
++    }
++
+     /// Adds a curve.
+     pub fn add_curve(&mut self, curve: Curve) -> Result<CurveId> {
+         self.curves.insert(curve)
+diff --git a/crates/gensolid-topo/src/block.rs b/crates/gensolid-topo/src/block.rs
+index 4540926..5ce6d95 100644
+--- a/crates/gensolid-topo/src/block.rs
++++ b/crates/gensolid-topo/src/block.rs
+@@ -23,6 +23,16 @@ const FACES: [(Vec3, [usize; 4]); 6] = [
+ /// Creates a solid box of size `x × y × z`, centred on the origin of `frame` and aligned
+ /// with its axes.
+ pub fn make_block(model: &mut Model, x: f64, y: f64, z: f64, frame: &Frame) -> Result<BodyId> {
++    model.transaction(|model| make_block_unchecked(model, x, y, z, frame))
++}
++
++pub(crate) fn make_block_unchecked(
++    model: &mut Model,
++    x: f64,
++    y: f64,
++    z: f64,
++    frame: &Frame,
++) -> Result<BodyId> {
+     let precision = *model.precision();
+     for (name, value) in [("x", x), ("y", y), ("z", z)] {
+         if !(value.is_finite() && value > precision.linear() && value < precision.size()) {
+diff --git a/crates/gensolid-topo/src/holed_block.rs b/crates/gensolid-topo/src/holed_block.rs
+index 48de1da..1e56c83 100644
+--- a/crates/gensolid-topo/src/holed_block.rs
++++ b/crates/gensolid-topo/src/holed_block.rs
+@@ -5,7 +5,7 @@ use gensolid_core::{Error, Result};
+ use gensolid_geom::{Circle, Curve, Cylinder, Surface};
+ use gensolid_math::{Frame, Interval, Sign, Vec3};
+ 
+-use crate::{Model, entity::*, make_block};
++use crate::{Model, block::make_block_unchecked, entity::*};
+ 
+ /// Creates a block centred on `frame.origin()` with a centred through-hole along its
+ /// local Z axis. `radius` is the hole radius, not its diameter. The radius and the
+@@ -34,6 +34,20 @@ pub fn make_block_with_offset_hole(
+     radius: f64,
+     offset: [f64; 2],
+     frame: &Frame,
++) -> Result<BodyId> {
++    model.transaction(|model| {
++        make_block_with_offset_hole_unchecked(model, x, y, z, radius, offset, frame)
++    })
++}
++
++fn make_block_with_offset_hole_unchecked(
++    model: &mut Model,
++    x: f64,
++    y: f64,
++    z: f64,
++    radius: f64,
++    offset: [f64; 2],
++    frame: &Frame,
+ ) -> Result<BodyId> {
+     let precision = *model.precision();
+     if ![x, y, z, radius, offset[0], offset[1]]
+@@ -84,7 +98,7 @@ pub fn make_block_with_offset_hole(
+         )?;
+         rings.push(Circle::new(ring_frame, radius, &precision)?);
+     }
+-    let body = make_block(model, x, y, z, frame)?;
++    let body = make_block_unchecked(model, x, y, z, frame)?;
+     // make_block emits bottom and top first, in shell order.
+     let faces = model.body_faces(body)?;
+     let bottom = faces
+diff --git a/crates/gensolid-topo/src/lib.rs b/crates/gensolid-topo/src/lib.rs
+index 5f0f5aa..a4dd181 100644
+--- a/crates/gensolid-topo/src/lib.rs
++++ b/crates/gensolid-topo/src/lib.rs
+@@ -24,4 +24,4 @@ pub mod model;
+ pub use block::make_block;
+ pub use entity::*;
+ pub use holed_block::{make_block_with_hole, make_block_with_offset_hole};
+-pub use model::{Model, RawEditor};
++pub use model::{Model, ModelLimits, RawEditor};
+diff --git a/crates/gensolid-topo/src/model.rs b/crates/gensolid-topo/src/model.rs
+index 567817f..4cc9513 100644
+--- a/crates/gensolid-topo/src/model.rs
++++ b/crates/gensolid-topo/src/model.rs
+@@ -8,6 +8,49 @@ use gensolid_geom::GeomStore;
+ 
+ use crate::entity::*;
+ 
++/// Maximum live entities in each topology and geometry arena.
++/// Defaults impose no additional limit below the typed-ID capacity.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct ModelLimits {
++    /// Maximum live bodies.
++    pub bodies: usize,
++    /// Maximum live regions.
++    pub regions: usize,
++    /// Maximum live shells.
++    pub shells: usize,
++    /// Maximum live faces.
++    pub faces: usize,
++    /// Maximum live loops.
++    pub loops: usize,
++    /// Maximum live fins.
++    pub fins: usize,
++    /// Maximum live edges.
++    pub edges: usize,
++    /// Maximum live vertices.
++    pub vertices: usize,
++    /// Maximum live curves.
++    pub curves: usize,
++    /// Maximum live surfaces.
++    pub surfaces: usize,
++}
++
++impl Default for ModelLimits {
++    fn default() -> Self {
++        Self {
++            bodies: usize::MAX,
++            regions: usize::MAX,
++            shells: usize::MAX,
++            faces: usize::MAX,
++            loops: usize::MAX,
++            fins: usize::MAX,
++            edges: usize::MAX,
++            vertices: usize::MAX,
++            curves: usize::MAX,
++            surfaces: usize::MAX,
++        }
++    }
++}
++
+ /// Container for topology and geometry sharing one precision.
+ pub struct Model {
+     precision: Precision,
+@@ -43,20 +86,59 @@ fn push_unique<T: Copy + Eq + Hash>(seen: &mut HashSet<T>, out: &mut Vec<T>, ite
+ impl Model {
+     /// Creates an empty model.
+     pub fn new(precision: Precision) -> Self {
++        Self::with_limits(precision, ModelLimits::default())
++    }
++
++    /// Creates an empty model with deterministic live-entity capacity limits.
++    pub fn with_limits(precision: Precision, limits: ModelLimits) -> Self {
+         Self {
+             precision,
+-            geom: GeomStore::new(),
+-            bodies: Arena::new(),
+-            regions: Arena::new(),
+-            shells: Arena::new(),
+-            faces: Arena::new(),
+-            loops: Arena::new(),
+-            fins: Arena::new(),
+-            edges: Arena::new(),
+-            vertices: Arena::new(),
++            geom: GeomStore::with_limits(limits.curves, limits.surfaces),
++            bodies: Arena::with_limit(limits.bodies),
++            regions: Arena::with_limit(limits.regions),
++            shells: Arena::with_limit(limits.shells),
++            faces: Arena::with_limit(limits.faces),
++            loops: Arena::with_limit(limits.loops),
++            fins: Arena::with_limit(limits.fins),
++            edges: Arena::with_limit(limits.edges),
++            vertices: Arena::with_limit(limits.vertices),
+         }
+     }
+ 
++    fn snapshot(&self) -> Self {
++        Self {
++            precision: self.precision,
++            geom: self.geom.clone(),
++            bodies: self.bodies.clone(),
++            regions: self.regions.clone(),
++            shells: self.shells.clone(),
++            faces: self.faces.clone(),
++            loops: self.loops.clone(),
++            fins: self.fins.clone(),
++            edges: self.edges.clone(),
++            vertices: self.vertices.clone(),
++        }
++    }
++
++    /// Commits an edit on `Ok`, restoring all geometry and topology on `Err` or unwind.
++    /// Nested commits are still rolled back if their enclosing transaction fails.
++    /// The caller remains responsible for geometric validation before committing.
++    /// Temporary IDs must not be published; after rollback they cannot alias future IDs.
++    /// Edit the provided storage; replacing the model or geometry store is unsupported.
++    /// Snapshot creation is proportional to existing model size and does not catch OOM abort.
++    pub fn transaction<T>(&mut self, operation: impl FnOnce(&mut Self) -> Result<T>) -> Result<T> {
++        let snapshot = self.snapshot();
++        let mut checkpoint = ModelCheckpoint {
++            model: self,
++            snapshot: Some(snapshot),
++        };
++        let result = operation(&mut *checkpoint.model);
++        if result.is_ok() {
++            checkpoint.snapshot = None;
++        }
++        result
++    }
++
+     /// Session precision.
+     pub const fn precision(&self) -> &Precision {
+         &self.precision
+@@ -197,6 +279,19 @@ impl Model {
+     }
+ }
+ 
++struct ModelCheckpoint<'a> {
++    model: &'a mut Model,
++    snapshot: Option<Model>,
++}
++
++impl Drop for ModelCheckpoint<'_> {
++    fn drop(&mut self) {
++        if let Some(snapshot) = self.snapshot.take() {
++            *self.model = snapshot;
++        }
++    }
++}
++
+ /// Unchecked mutation of a [`Model`]; see [`Model::raw`].
+ pub struct RawEditor<'a> {
+     model: &'a mut Model,
+@@ -240,3 +335,180 @@ impl RawEditor<'_> {
+         self.model.precision
+     }
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::{make_block, make_block_with_hole};
++    use gensolid_core::ErrorCode;
++    use gensolid_geom::{Curve, Line, Plane, Surface};
++    use gensolid_math::{Frame, Point3, Vec3};
++
++    fn assert_restored(actual: &Model, expected: &Model) {
++        assert_eq!(actual.precision, expected.precision);
++        macro_rules! same {
++            ($($field:ident),*) => { $(
++                assert_eq!(actual.$field.iter().collect::<Vec<_>>(), expected.$field.iter().collect::<Vec<_>>(), stringify!($field));
++            )* };
++        }
++        same!(bodies, regions, shells, faces, loops, fins, edges, vertices);
++        assert_eq!(
++            actual.geom.curves().collect::<Vec<_>>(),
++            expected.geom.curves().collect::<Vec<_>>()
++        );
++        assert_eq!(
++            actual.geom.surfaces().collect::<Vec<_>>(),
++            expected.geom.surfaces().collect::<Vec<_>>()
++        );
++    }
++
++    #[test]
++    fn every_arena_capacity_failure_restores_existing_model() {
++        // Existing block + a failing second block, including late geometry/fin failures.
++        for class in 0..10 {
++            let mut limits = ModelLimits::default();
++            match class {
++                0 => limits.bodies = 1,
++                1 => limits.regions = 3,
++                2 => limits.shells = 3,
++                3 => limits.faces = 11,
++                4 => limits.loops = 11,
++                5 => limits.fins = 47,
++                6 => limits.edges = 23,
++                7 => limits.vertices = 15,
++                8 => limits.curves = 23,
++                _ => limits.surfaces = 11,
++            }
++            let mut model = Model::with_limits(Precision::DEFAULT, limits);
++            make_block(&mut model, 40.0, 25.0, 8.0, &Frame::WORLD).unwrap();
++            let before = model.snapshot();
++            let error = make_block(&mut model, 30.0, 20.0, 5.0, &Frame::WORLD).unwrap_err();
++            assert_eq!(error.code(), ErrorCode::CapacityExceeded, "arena {class}");
++            assert_restored(&model, &before);
++        }
++    }
++
++    #[test]
++    fn hole_failure_rolls_back_its_block_and_extra_geometry() {
++        let limits = ModelLimits {
++            fins: 48,
++            ..ModelLimits::default()
++        };
++        let mut model = Model::with_limits(Precision::DEFAULT, limits);
++        make_block(&mut model, 40.0, 25.0, 8.0, &Frame::WORLD).unwrap();
++        let before = model.snapshot();
++        assert_eq!(
++            make_block_with_hole(&mut model, 40.0, 25.0, 8.0, 4.0, &Frame::WORLD)
++                .unwrap_err()
++                .code(),
++            ErrorCode::CapacityExceeded
++        );
++        assert_restored(&model, &before);
++        assert!(make_block(&mut model, 30.0, 20.0, 5.0, &Frame::WORLD).is_ok());
++        assert_eq!(model.bodies().count(), 2);
++    }
++
++    #[test]
++    fn edits_and_geometry_allocations_rollback_and_ids_stay_dead() {
++        let mut model = Model::new(Precision::DEFAULT);
++        let body = make_block(&mut model, 40.0, 25.0, 8.0, &Frame::WORLD).unwrap();
++        let vertex = model.body_vertices(body).unwrap()[0];
++        let region = model.body(body).unwrap().regions[1];
++        let shell = model.region(region).unwrap().shells[0];
++        let face = model.body_faces(body).unwrap()[0];
++        let lp = model.face(face).unwrap().loops[0];
++        let fin = model.loop_(lp).unwrap().fins[0];
++        let edge = model.fin(fin).unwrap().edge;
++        let before = model.snapshot();
++        let (mut transient_vertex, mut transient_curve, mut transient_surface) = (None, None, None);
++        let result: Result<()> = model.transaction(|model| {
++            let mut raw = model.raw();
++            raw.vertex_mut(vertex)?.point = Point3::ORIGIN;
++            raw.body_mut(body)?.regions.clear();
++            raw.region_mut(region)?.solid = false;
++            raw.shell_mut(shell)?.faces.clear();
++            raw.face_mut(face)?.loops.clear();
++            raw.loop_mut(lp)?.fins.clear();
++            raw.fin_mut(fin)?.sense = raw.fin_mut(fin)?.sense.reversed();
++            raw.edge_mut(edge)?.fins.clear();
++            transient_vertex = Some(raw.insert_vertex(Vertex {
++                point: Point3::ORIGIN,
++                tolerance: None,
++            })?);
++            transient_curve = Some(raw.geom_mut().add_curve(Curve::Line(Line::new(
++                Point3::ORIGIN,
++                Vec3::X,
++                &Precision::DEFAULT,
++            )?))?);
++            transient_surface = Some(
++                raw.geom_mut()
++                    .add_surface(Surface::Plane(Plane::new(Frame::WORLD)))?,
++            );
++            Err(Error::internal(
++                "injected failure after edits and allocations",
++            ))
++        });
++        assert!(result.is_err());
++        assert_restored(&model, &before);
++        let (v, c, s) = (
++            transient_vertex.unwrap(),
++            transient_curve.unwrap(),
++            transient_surface.unwrap(),
++        );
++        assert!(model.vertex(v).is_err());
++        assert!(model.geom.curve(c).is_err());
++        assert!(model.geom.surface(s).is_err());
++        make_block(&mut model, 30.0, 20.0, 5.0, &Frame::WORLD).unwrap();
++        assert!(model.vertex(v).is_err());
++        assert!(model.geom.curve(c).is_err());
++        assert!(model.geom.surface(s).is_err());
++    }
++
++    #[test]
++    fn nested_commit_is_rolled_back_by_outer_failure() {
++        let mut model = Model::new(Precision::DEFAULT);
++        let before = model.snapshot();
++        let mut temporary = None;
++        let result: Result<()> = model.transaction(|model| {
++            temporary =
++                Some(model.transaction(|model| make_block(model, 40.0, 25.0, 8.0, &Frame::WORLD))?);
++            Err(Error::internal("outer failure"))
++        });
++        assert!(result.is_err());
++        assert_restored(&model, &before);
++        let later = make_block(&mut model, 30.0, 20.0, 5.0, &Frame::WORLD).unwrap();
++        assert_ne!(temporary.unwrap(), later);
++        assert!(model.body(temporary.unwrap()).is_err());
++    }
++
++    #[test]
++    fn inner_failure_can_be_recovered_and_outer_committed() {
++        let mut model = Model::new(Precision::DEFAULT);
++        let body = model
++            .transaction(|model| {
++                let failed: Result<()> = model.transaction(|model| {
++                    make_block(model, 40.0, 25.0, 8.0, &Frame::WORLD)?;
++                    Err(Error::internal("inner failure"))
++                });
++                assert!(failed.is_err());
++                make_block(model, 30.0, 20.0, 5.0, &Frame::WORLD)
++            })
++            .unwrap();
++        assert_eq!(model.bodies().collect::<Vec<_>>(), [body]);
++    }
++
++    #[test]
++    fn unwinding_restores_state() {
++        let mut model = Model::new(Precision::DEFAULT);
++        make_block(&mut model, 40.0, 25.0, 8.0, &Frame::WORLD).unwrap();
++        let before = model.snapshot();
++        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++            let _: Result<()> = model.transaction(|model| {
++                make_block(model, 30.0, 20.0, 5.0, &Frame::WORLD)?;
++                panic!("injected test-only unwind");
++            });
++        }));
++        assert!(result.is_err());
++        assert_restored(&model, &before);
++    }
++}
+diff --git a/crates/gensolid-api/tests/transactions.rs b/crates/gensolid-api/tests/transactions.rs
+new file mode 100755
+index 0000000..7466134
+--- /dev/null
++++ b/crates/gensolid-api/tests/transactions.rs
+@@ -0,0 +1,163 @@
++//! Capacity failures on real modelling paths, independently checked after rollback.
++#[cfg(test)]
++mod tests {
++    use gensolid_api::{Axis2, ErrorCode, ModelLimits, Precision, Session, SessionOptions};
++    use gensolid_check::{CheckOptions, check_body};
++    use proptest::prelude::*;
++
++    fn frame(origin: [f64; 3], azimuth: f64, elevation: f64) -> Axis2 {
++        let (s, c) = azimuth.sin_cos();
++        let (se, ce) = elevation.sin_cos();
++        Axis2 {
++            location: origin,
++            axis: [ce * c, ce * s, se],
++            ref_direction: [-s, c, 0.0],
++        }
++    }
++
++    fn check_all(session: &Session) {
++        for body in session.model().bodies() {
++            let result = check_body(session.model(), body, &CheckOptions::default()).unwrap();
++            assert!(result.faults.is_empty(), "{:?}", result.faults);
++            assert_eq!(result.unchecked, 0);
++        }
++    }
++
++    fn fail_and_recover(x: f64, y: f64, z: f64, radius: f64, basis: Axis2) {
++        let mut session = Session::start_with_limits(
++            SessionOptions::default(),
++            ModelLimits {
++                fins: 48,
++                ..ModelLimits::default()
++            },
++        );
++        let old = session
++            .body_create_solid_block(x, y, z, Some(&basis))
++            .unwrap();
++        let old_faces = session.body_ask_faces(old).unwrap();
++        let old_edges = session.body_ask_edges(old).unwrap();
++        let old_vertices = session.body_ask_vertices(old).unwrap();
++        let old_points = old_vertices
++            .iter()
++            .map(|&v| session.vertex_ask_point(v).unwrap())
++            .collect::<Vec<_>>();
++        let geometry = (
++            session
++                .model()
++                .geom()
++                .curves()
++                .map(|(id, c)| (id, c.clone()))
++                .collect::<Vec<_>>(),
++            session
++                .model()
++                .geom()
++                .surfaces()
++                .map(|(id, s)| (id, s.clone()))
++                .collect::<Vec<_>>(),
++        );
++        let expected_next_tag = *old_vertices.iter().max().unwrap() + 1;
++        let error = session
++            .body_create_solid_block_with_offset_hole(
++                x,
++                y,
++                z,
++                radius,
++                [x * 0.1, -y * 0.1],
++                Some(&basis),
++            )
++            .unwrap_err();
++        assert_eq!(error.code(), ErrorCode::CapacityExceeded);
++        assert_eq!(session.model().bodies().count(), 1);
++        assert_eq!(session.body_ask_faces(old).unwrap(), old_faces);
++        assert_eq!(session.body_ask_edges(old).unwrap(), old_edges);
++        assert_eq!(session.body_ask_vertices(old).unwrap(), old_vertices);
++        assert_eq!(
++            old_vertices
++                .iter()
++                .map(|&v| session.vertex_ask_point(v).unwrap())
++                .collect::<Vec<_>>(),
++            old_points
++        );
++        assert_eq!(
++            session
++                .model()
++                .geom()
++                .curves()
++                .map(|(id, c)| (id, c.clone()))
++                .collect::<Vec<_>>(),
++            geometry.0
++        );
++        assert_eq!(
++            session
++                .model()
++                .geom()
++                .surfaces()
++                .map(|(id, s)| (id, s.clone()))
++                .collect::<Vec<_>>(),
++            geometry.1
++        );
++        check_all(&session);
++        assert_eq!(
++            session
++                .body_create_solid_block(x, y, z, Some(&basis))
++                .unwrap(),
++            expected_next_tag
++        );
++        assert_eq!(session.model().bodies().count(), 2);
++        check_all(&session);
++    }
++
++    #[test]
++    fn late_hole_failure_preserves_queries_and_next_tag() {
++        fail_and_recover(40.0, 25.0, 8.0, 4.0, frame([10.0, 20.0, 30.0], 0.8, -0.3));
++    }
++
++    #[test]
++    fn geometry_failure_after_allocation_preserves_existing_body() {
++        let mut session = Session::start(SessionOptions::default());
++        let old = session
++            .body_create_solid_block(40.0, 25.0, 8.0, None)
++            .unwrap();
++        // Finite coordinates large enough that local corners collapse when rounded.
++        let huge = Precision::DEFAULT.size() / f64::EPSILON * Precision::DEFAULT.size();
++        let basis = Axis2 {
++            location: [huge; 3],
++            axis: [0.0, 0.0, 1.0],
++            ref_direction: [1.0, 0.0, 0.0],
++        };
++        let error = session
++            .body_create_solid_block(30.0, 20.0, 5.0, Some(&basis))
++            .unwrap_err();
++        assert_eq!(error.code(), ErrorCode::Degenerate);
++        assert_eq!(session.model().bodies().count(), 1);
++        assert_eq!(session.model().geom().curve_count(), 12);
++        assert_eq!(session.model().geom().surface_count(), 6);
++        assert!(session.body_check(old).unwrap().is_empty());
++        assert_eq!(
++            session
++                .body_create_solid_block(30.0, 20.0, 5.0, None)
++                .unwrap(),
++            2
++        );
++        check_all(&session);
++    }
++
++    proptest! {
++        #[test]
++        fn random_sizes_and_frames_recover(
++            x in 1.0f64..100.0, y in 1.0f64..100.0, z in 1.0f64..100.0,
++            ox in -50.0f64..50.0, oy in -50.0f64..50.0, oz in -50.0f64..50.0,
++            azimuth in -3.0f64..3.0, elevation in -1.5f64..1.5,
++        ) {
++            fail_and_recover(x,y,z,x.min(y)*0.125,frame([ox,oy,oz],azimuth,elevation));
++        }
++
++        #[test]
++        fn near_precision_height_failure_recovers(
++            factor in 16.0f64..256.0, azimuth in -3.0f64..3.0, elevation in -1.5f64..1.5,
++        ) {
++            fail_and_recover(40.0,25.0,Precision::DEFAULT.linear()*factor,4.0,
++                frame([0.0,0.0,0.0],azimuth,elevation));
++        }
++    }
++}
+diff --git a/crates/gensolid-api/examples/transaction_recovery.rs b/crates/gensolid-api/examples/transaction_recovery.rs
+new file mode 100755
+index 0000000..34e9069
+--- /dev/null
++++ b/crates/gensolid-api/examples/transaction_recovery.rs
+@@ -0,0 +1,67 @@
++//! Deterministic capacity failure and successful recovery through the public Rust API.
++use gensolid_api::{Axis2, ErrorCode, ModelLimits, Session, SessionOptions};
++
++fn main() -> Result<(), Box<dyn std::error::Error>> {
++    let mut session = Session::start_with_limits(
++        SessionOptions::default(),
++        ModelLimits {
++            fins: 48,
++            ..ModelLimits::default()
++        },
++    );
++    let basis = Axis2 {
++        location: [0.0, 0.0, 4.0],
++        axis: [0.0, 0.0, 1.0],
++        ref_direction: [1.0, 0.0, 0.0],
++    };
++    let old = session.body_create_solid_block(40.0, 25.0, 8.0, Some(&basis))?;
++    let vertices = session.body_ask_vertices(old)?;
++    let points = vertices
++        .iter()
++        .map(|&v| session.vertex_ask_point(v))
++        .collect::<Result<Vec<_>, _>>()?;
++    let expected_next = vertices
++        .iter()
++        .max()
++        .copied()
++        .ok_or("old body has no vertices")?
++        .checked_add(1)
++        .ok_or("tag overflow")?;
++    let error = match session.body_create_solid_block_with_offset_hole(
++        40.0,
++        25.0,
++        8.0,
++        4.0,
++        [6.0, -3.0],
++        Some(&basis),
++    ) {
++        Err(error) if error.code() == ErrorCode::CapacityExceeded => error,
++        Err(error) => return Err(error.into()),
++        Ok(_) => return Err("expected controlled capacity failure".into()),
++    };
++    let preserved = session.model().bodies().count() == 1
++        && session.model().geom().curve_count() == 12
++        && session.model().geom().surface_count() == 6
++        && session.body_check(old)?.is_empty()
++        && session.body_ask_vertices(old)? == vertices
++        && vertices
++            .iter()
++            .map(|&v| session.vertex_ask_point(v))
++            .collect::<Result<Vec<_>, _>>()?
++            == points;
++    if !preserved {
++        return Err("failed modelling operation changed existing state".into());
++    }
++    let later = session.body_create_solid_block(40.0, 25.0, 8.0, Some(&basis))?;
++    if later != expected_next || !session.body_check(later)?.is_empty() {
++        return Err("recovery failed or a rejected request consumed a tag".into());
++    }
++    println!("demo=transaction_recovery");
++    println!("injected_limit=fins:48");
++    println!("failure_code={:?}", error.code());
++    println!("existing_body_preserved={preserved}");
++    println!("next_tag_preserved={}", later == expected_next);
++    println!("committed_body_count={}", session.model().bodies().count());
++    println!("recovered_body_faults={}", session.body_check(later)?.len());
++    Ok(())
++}
